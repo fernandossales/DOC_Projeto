@@ -656,7 +656,7 @@ async function fetchNNSheet(){
   return _parseGviz(text);
 }
 
-const CACHE_KEY = "conviver_sheets_cache_v3";
+const CACHE_KEY = "conviver_sheets_cache_v4";
 const CACHE_TTL = 5*60*1000; // 5 minutes
 
 function _gvizUrl(sheetName){
@@ -876,8 +876,18 @@ async function reloadAllFromSheets(forceRefresh){
   const btn = document.getElementById("refresh-btn");
   if(btn){ btn.disabled = true; btn.classList.add("spinning"); }
   showLoadingOverlay(forceRefresh ? "Atualizando da planilha…" : "Carregando dados…");
+  let result;
   try {
-    const result = await loadFromSheets(forceRefresh);
+    result = await loadFromSheets(forceRefresh);
+  } catch(err){
+    console.error("Falha no carregamento:", err);
+    showLoadingError(err);
+    if(btn){ btn.disabled = false; btn.classList.remove("spinning"); }
+    return;
+  }
+
+  // Load succeeded — apply data
+  try {
     Object.assign(D, result.data);
     CONTRATOS.length = 0;
     if(result.contracts) result.contracts.forEach(c=>CONTRATOS.push(c));
@@ -886,37 +896,37 @@ async function reloadAllFromSheets(forceRefresh){
     if(result.errors && result.errors.length){
       console.warn("Alguns dados não foram carregados:", result.errors);
     }
-    // Re-render everything
-    buildDash();
-    buildNN();
-    buildFinancialDash();
-    ["RIV","CTM","EXT","KEN","MLU","JBR","GE"].forEach(buildEmp);
-    buildContracts();
-    buildDVT();
-    buildNNPage();
-    setupTooltips();
-    requestAnimationFrame(()=>{
-      const dash = document.getElementById("page-dash");
-      if(dash){
-        dash.classList.add("visible");
-        triggerAnims(dash);
-      }
-    });
-    // Update last-update label
-    const lbl = document.getElementById("last-update");
-    if(lbl){
-      const d = new Date(result.ts);
-      const hh = String(d.getHours()).padStart(2,"0");
-      const mm = String(d.getMinutes()).padStart(2,"0");
-      lbl.textContent = (result.fromCache?"cache · ":"") + hh+":"+mm;
+  } catch(e){ console.error("Erro ao aplicar dados:", e); }
+
+  // Render each section in isolation so one bad chart doesn't break others
+  const safeRun = (label, fn)=>{ try { fn(); } catch(e){ console.error(`Erro em ${label}:`, e); } };
+  safeRun("buildDash", buildDash);
+  safeRun("buildNN", buildNN);
+  safeRun("buildFinancialDash", buildFinancialDash);
+  ["RIV","CTM","EXT","KEN","MLU","JBR","GE"].forEach(k=>safeRun(`buildEmp(${k})`, ()=>buildEmp(k)));
+  safeRun("buildContracts", buildContracts);
+  safeRun("buildDVT", buildDVT);
+  safeRun("buildNNPage", buildNNPage);
+  safeRun("setupTooltips", setupTooltips);
+
+  requestAnimationFrame(()=>{
+    const dash = document.getElementById("page-dash");
+    if(dash){
+      dash.classList.add("visible");
+      try { triggerAnims(dash); } catch(e){}
     }
-    hideLoadingOverlay();
-  } catch(err){
-    console.error(err);
-    showLoadingError(err);
-  } finally {
-    if(btn){ btn.disabled = false; btn.classList.remove("spinning"); }
+  });
+
+  // Update last-update label
+  const lbl = document.getElementById("last-update");
+  if(lbl){
+    const d = new Date(result.ts);
+    const hh = String(d.getHours()).padStart(2,"0");
+    const mm = String(d.getMinutes()).padStart(2,"0");
+    lbl.textContent = (result.fromCache?"cache · ":"") + hh+":"+mm;
   }
+  hideLoadingOverlay();
+  if(btn){ btn.disabled = false; btn.classList.remove("spinning"); }
 }
 
 
@@ -1728,7 +1738,15 @@ function buildFinancialDash(){
   const emps=Object.entries(empMap).sort((a,b)=>b[1].vt-a[1].vt);
   const empLabels=emps.map(e=>e[0].replace('EXCLUSIVE TIANGUÁ','EXC. TIANGUÁ').replace('EMPREENDIMENTO PARNAIBA VII','P. VII').replace('PROSPECCAO DE NEGOCIOS','PROSPECÇÃO'));
 
-  new Chart(document.getElementById('chartContratos'),{
+  const _ctxC = document.getElementById('chartContratos');
+  // Bulletproof destroy: try both Chart.getChart and check all instances
+  if(_ctxC){
+    const _existC = (typeof Chart !== 'undefined' && Chart.getChart) ? Chart.getChart(_ctxC) : null;
+    if(_existC) _existC.destroy();
+    // Also clear canvas dimensions to fully reset
+    _ctxC.width = _ctxC.width;
+  }
+  new Chart(_ctxC,{
     type:'bar',
     data:{
       labels:empLabels,
@@ -2564,7 +2582,13 @@ function buildNN(){
   },100);
 
   // Build vertical bar chart
-  new Chart(document.getElementById('chartNNPie'),{
+  const _ctxN = document.getElementById('chartNNPie');
+  if(_ctxN){
+    const _existN = (typeof Chart !== 'undefined' && Chart.getChart) ? Chart.getChart(_ctxN) : null;
+    if(_existN) _existN.destroy();
+    _ctxN.width = _ctxN.width;
+  }
+  new Chart(_ctxN,{
     type:'bar',
     data:{
       labels: ufEntries.map(([uf])=>uf),
