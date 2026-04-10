@@ -464,14 +464,40 @@ const EMP_NAMES = {
 
 // ── CONTRATOS (planilha separada) ──
 // Contratos e NN: abas da planilha principal
-const CONTRACTS_TAB = "MEDIÇÕES";
-const NN_TAB = "ACOMPANHAMENTO NN";
+// Tentamos múltiplas variantes do nome para resistir a diferenças de encoding/case
+const CONTRACTS_TAB_VARIANTS = ["MEDIÇÕES","MEDICOES","Medições","medições","MEDIçÕES","MEDICÕES"];
+const NN_TAB_VARIANTS = ["ACOMPANHAMENTO NN","Acompanhamento NN","acompanhamento nn","ACOMPANHAMENTO  NN"];
 
-function _contractsGvizUrl(){
-  return `https://docs.google.com/spreadsheets/d/${SHEETS_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(CONTRACTS_TAB)}`;
+function _gvizUrlForTab(tabName){
+  return `https://docs.google.com/spreadsheets/d/${SHEETS_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(tabName)}`;
 }
-function _nnGvizUrl(){
-  return `https://docs.google.com/spreadsheets/d/${SHEETS_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(NN_TAB)}`;
+
+// Try a series of tab name variants until one returns a valid gviz response
+async function _fetchTabWithFallbacks(variants, label){
+  let lastErr;
+  for(const name of variants){
+    try {
+      const url = _gvizUrlForTab(name);
+      const resp = await fetch(url, {cache:"no-store"});
+      if(!resp.ok){
+        lastErr = new Error(`HTTP ${resp.status} para "${name}"`);
+        continue;
+      }
+      const text = await resp.text();
+      // gviz returns "google.visualization.Query.setResponse({...})"
+      // If sheet not found, status will be "error" with reason "not_found"
+      if(text.includes('"status":"error"') && text.includes('not_found')){
+        lastErr = new Error(`Aba "${name}" não encontrada`);
+        continue;
+      }
+      const parsed = _parseGviz(text);
+      console.log(`[${label}] sucesso usando aba "${name}"`);
+      return parsed;
+    } catch(e){
+      lastErr = e;
+    }
+  }
+  throw new Error(`${label}: nenhuma variante funcionou. Última falha: ${lastErr?.message || lastErr}`);
 }
 
 // Parse numeric cell values. Prefer raw .v (already a Number); fall back to .f
@@ -499,11 +525,6 @@ function parseContractsSheet(gviz){
   const rows = gviz.table.rows || [];
   const cols = gviz.table.cols || [];
 
-  // Try to detect column positions from header labels (row 0 in gviz may be the
-  // label, or labels may be on cols[].label). Fall back to fixed positions.
-  // Expected columns (from original Excel):
-  //   tipo, cod, ano, tipo_contrato, coligada, contratado, empreendimento,
-  //   descricao, valor_total, budget, pago, pct, saldo
   const want = ["tipo","cod","ano","tipo_contrato","coligada","contratado",
                 "empreendimento","descricao","valor_total","budget","pago","pct","saldo"];
 
@@ -513,43 +534,72 @@ function parseContractsSheet(gviz){
 
   const synonyms = {
     tipo:            ["tipo","categoria"],
-    cod:             ["cod","codigo","numero","num","n"],
-    ano:             ["ano","year"],
-    tipo_contrato:   ["tipocontrato","contrato","formalidade"],
-    coligada:        ["coligada","empresa","sociedade","spe"],
-    contratado:      ["contratado","fornecedor","prestador"],
-    empreendimento:  ["empreendimento","obra","projeto"],
-    descricao:       ["descricao","desc","objeto","servico"],
-    valor_total:     ["valortotal","valor","total","vlrtotal"],
-    budget:          ["budget","orcamento","previsto"],
-    pago:            ["pago","valorpago","realizado"],
-    pct:             ["pct","percentual","porcentagem","percent"],
-    saldo:           ["saldo","restante","aberto","pendente"]
+    cod:             ["cod","codigo","numero","num","contratoOC","oc","pc","obras"],
+    ano:             ["ano","year","exercicio"],
+    tipo_contrato:   ["tipocontrato","contrato","formalidade","formal"],
+    coligada:        ["coligada","empresa","sociedade","spe","razaosocial"],
+    contratado:      ["contratado","fornecedor","prestador","contratada","razao"],
+    empreendimento:  ["empreendimento","obra","projeto","emp"],
+    descricao:       ["descricao","desc","objeto","servico","escopo","historico"],
+    valor_total:     ["valortotal","valor","total","vlrtotal","vlrcontrato","valorcontrato","contratado"],
+    budget:          ["budget","orcamento","previsto","planejado","estimado"],
+    pago:            ["pago","valorpago","realizado","executado","medido","medicao","medicoes"],
+    pct:             ["pct","percentual","porcentagem","percent","%","avanco","fisico"],
+    saldo:           ["saldo","restante","aberto","pendente","apagar","faltante"]
   };
 
-  // Try col headers from gviz cols[].label first
-  let idxMap = {};
-  cols.forEach((c,i)=>{
-    const label = norm(c.label);
-    if(!label) return;
-    for(const key of want){
-      if(idxMap[key] != null) continue;
-      if(synonyms[key].some(s => label === s || label.includes(s))){
-        idxMap[key] = i;
-        break;
+  const tryHeader = (cellLabels)=>{
+    const map = {};
+    cellLabels.forEach((rawLabel,i)=>{
+      const label = norm(rawLabel);
+      if(!label) return;
+      for(const key of want){
+        if(map[key] != null) continue;
+        if(synonyms[key].some(s => label === s || label.includes(s))){
+          map[key] = i;
+          break;
+        }
+      }
+    });
+    return map;
+  };
+
+  // Strategy 1: cols[].label
+  let idxMap = tryHeader(cols.map(c => c?.label || ""));
+  let headerRowIndex = -1;
+  let dataStartIdx = 0;
+
+  // Strategy 2: scan first 6 rows for a row that looks like a header
+  if(Object.keys(idxMap).length < 5){
+    for(let i=0; i<Math.min(6, rows.length); i++){
+      const cells = rows[i]?.c || [];
+      const labels = cells.map(c => c ? (c.f != null ? c.f : c.v) : "");
+      const candidate = tryHeader(labels);
+      if(Object.keys(candidate).length > Object.keys(idxMap).length){
+        idxMap = candidate;
+        headerRowIndex = i;
+        dataStartIdx = i + 1;
       }
     }
+  }
+
+  console.log("[MEDIÇÕES] Header detection:", {
+    colsLabels: cols.map(c => c?.label),
+    detectedMap: idxMap,
+    headerRowIndex: headerRowIndex,
+    totalRows: rows.length
   });
 
-  // If header detection failed for most fields, fall back to fixed positions
-  if(Object.keys(idxMap).length < 6){
+  // If still nothing, fall back to fixed positions (original Excel order)
+  if(Object.keys(idxMap).length < 5){
+    console.warn("[MEDIÇÕES] Detecção de cabeçalho falhou — usando posições fixas");
     idxMap = {tipo:0,cod:1,ano:2,tipo_contrato:3,coligada:4,contratado:5,
               empreendimento:6,descricao:7,valor_total:8,budget:9,pago:10,pct:11,saldo:12};
   }
 
   const out = [];
-  rows.forEach(r=>{
-    const cells = r.c || [];
+  for(let r=dataStartIdx; r<rows.length; r++){
+    const cells = rows[r]?.c || [];
     const get = (k)=>{
       const ci = idxMap[k];
       if(ci == null) return null;
@@ -562,37 +612,41 @@ function parseContractsSheet(gviz){
       return (v==null) ? "" : String(v).trim();
     };
 
-    const tipo = str("tipo");
     const cod  = str("cod");
-    // Skip empty rows and header rows
-    if(!tipo && !cod) return;
-    if(tipo.toUpperCase().includes("TIPO") && cod.toUpperCase().includes("COD")) return;
+    const empName = str("empreendimento");
+    const contratado = str("contratado");
+    const descricao = str("descricao");
+    const valor_total = _parseNum(get("valor_total"));
+
+    // Skip empty rows
+    if(!cod && !empName && !contratado && !descricao && !valor_total) continue;
+    // Skip header-like rows
+    const upCod = cod.toUpperCase();
+    if(upCod === "COD" || upCod === "CÓDIGO" || upCod.includes("NUMERO")) continue;
 
     out.push({
-      tipo: tipo,
+      tipo: str("tipo"),
       cod: cod,
       ano: str("ano"),
       tipo_contrato: str("tipo_contrato"),
       coligada: str("coligada"),
-      contratado: str("contratado"),
-      empreendimento: str("empreendimento"),
-      descricao: str("descricao"),
-      valor_total: _parseNum(get("valor_total")),
+      contratado: contratado,
+      empreendimento: empName,
+      descricao: descricao,
+      valor_total: valor_total,
       budget:      _parseNum(get("budget")),
       pago:        _parseNum(get("pago")),
       pct:         _parseNum(get("pct")),
       saldo:       _parseNum(get("saldo"))
     });
-  });
+  }
+  console.log(`[MEDIÇÕES] Parseados ${out.length} contratos`);
+  if(out.length > 0) console.log("[MEDIÇÕES] Amostra:", out[0]);
   return out;
 }
 
 async function fetchContractsSheet(){
-  const url = _contractsGvizUrl();
-  const resp = await fetch(url, {cache:"no-store"});
-  if(!resp.ok) throw new Error(`HTTP ${resp.status} ao buscar planilha de contratos`);
-  const text = await resp.text();
-  return _parseGviz(text);
+  return _fetchTabWithFallbacks(CONTRACTS_TAB_VARIANTS, "MEDIÇÕES");
 }
 
 // ── ACOMPANHAMENTO NN parser ──
@@ -649,14 +703,10 @@ function parseNNSheet(gviz){
 }
 
 async function fetchNNSheet(){
-  const url = _nnGvizUrl();
-  const resp = await fetch(url, {cache:"no-store"});
-  if(!resp.ok) throw new Error(`HTTP ${resp.status} ao buscar aba "${NN_TAB}"`);
-  const text = await resp.text();
-  return _parseGviz(text);
+  return _fetchTabWithFallbacks(NN_TAB_VARIANTS, "ACOMPANHAMENTO NN");
 }
 
-const CACHE_KEY = "conviver_sheets_cache_v4";
+const CACHE_KEY = "conviver_sheets_cache_v5";
 const CACHE_TTL = 5*60*1000; // 5 minutes
 
 function _gvizUrl(sheetName){
