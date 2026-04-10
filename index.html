@@ -542,8 +542,11 @@ const CONTRACTS_TAB_VARIANTS = ["MEDIÇÕES","MEDICOES","Medições","medições
 const NN_TAB_VARIANTS = ["ACOMPANHAMENTO NN","Acompanhamento NN","acompanhamento nn","ACOMPANHAMENTO  NN"];
 
 function _gvizUrlForTab(tabName){
-  // tq=select * força o gviz a ignorar qualquer filtro ativo na planilha
-  return `https://docs.google.com/spreadsheets/d/${SHEETS_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(tabName)}&tq=${encodeURIComponent("select *")}`;
+  // Listar colunas explicitamente (A..Z) faz o gviz executar a query contra os
+  // dados CRUS da planilha, ignorando filtros visuais ativos.
+  // headers=0 faz gviz tratar todas as linhas como dados (parsers já detectam cabeçalhos).
+  const q = "select A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z";
+  return `https://docs.google.com/spreadsheets/d/${SHEETS_ID}/gviz/tq?tqx=out:json&headers=0&sheet=${encodeURIComponent(tabName)}&tq=${encodeURIComponent(q)}`;
 }
 
 // Try a series of tab name variants until one returns a valid gviz response
@@ -792,12 +795,15 @@ async function fetchNNSheet(){
   return _fetchTabWithFallbacks(NN_TAB_VARIANTS, "ACOMPANHAMENTO NN");
 }
 
-const CACHE_KEY = "conviver_sheets_cache_v7";
+const CACHE_KEY = "conviver_sheets_cache_v8";
 const CACHE_TTL = 5*60*1000; // 5 minutes
 
 function _gvizUrl(sheetName){
-  // tq=select * força o gviz a ignorar qualquer filtro ativo na planilha
-  return `https://docs.google.com/spreadsheets/d/${SHEETS_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}&tq=${encodeURIComponent("select *")}`;
+  // Listar colunas explicitamente (A..Z) faz o gviz executar a query contra os
+  // dados CRUS da planilha, ignorando filtros visuais ativos.
+  // headers=0 faz gviz tratar todas as linhas como dados (parsers já detectam cabeçalhos).
+  const q = "select A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z";
+  return `https://docs.google.com/spreadsheets/d/${SHEETS_ID}/gviz/tq?tqx=out:json&headers=0&sheet=${encodeURIComponent(sheetName)}&tq=${encodeURIComponent(q)}`;
 }
 
 // Parse Google's gviz wrapper: google.visualization.Query.setResponse({...});
