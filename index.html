@@ -542,7 +542,8 @@ const CONTRACTS_TAB_VARIANTS = ["MEDIÇÕES","MEDICOES","Medições","medições
 const NN_TAB_VARIANTS = ["ACOMPANHAMENTO NN","Acompanhamento NN","acompanhamento nn","ACOMPANHAMENTO  NN"];
 
 function _gvizUrlForTab(tabName){
-  return `https://docs.google.com/spreadsheets/d/${SHEETS_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(tabName)}`;
+  // tq=select * força o gviz a ignorar qualquer filtro ativo na planilha
+  return `https://docs.google.com/spreadsheets/d/${SHEETS_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(tabName)}&tq=${encodeURIComponent("select *")}`;
 }
 
 // Try a series of tab name variants until one returns a valid gviz response
@@ -791,11 +792,12 @@ async function fetchNNSheet(){
   return _fetchTabWithFallbacks(NN_TAB_VARIANTS, "ACOMPANHAMENTO NN");
 }
 
-const CACHE_KEY = "conviver_sheets_cache_v6";
+const CACHE_KEY = "conviver_sheets_cache_v7";
 const CACHE_TTL = 5*60*1000; // 5 minutes
 
 function _gvizUrl(sheetName){
-  return `https://docs.google.com/spreadsheets/d/${SHEETS_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`;
+  // tq=select * força o gviz a ignorar qualquer filtro ativo na planilha
+  return `https://docs.google.com/spreadsheets/d/${SHEETS_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}&tq=${encodeURIComponent("select *")}`;
 }
 
 // Parse Google's gviz wrapper: google.visualization.Query.setResponse({...});
