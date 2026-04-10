@@ -145,6 +145,18 @@ td:last-child{border-right:none}
 .row-detail-inner{display:flex;gap:18px;flex-wrap:wrap}
 .rd-item{display:flex;flex-direction:column;gap:2px}
 .rd-label{font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gray-400)}
+/* Prancha list inside detail row */
+.pr-wrap{background:#fff;border:1px solid #e8e5d8;border-radius:6px;padding:10px 14px;margin:2px 0}
+.pr-ttl{font-size:9px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:#5a5a5a;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.pr-ttl .pr-count{background:var(--green);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;letter-spacing:.5px}
+.pr-tbl{width:100%;border-collapse:collapse;font-size:11px}
+.pr-tbl thead th{background:#f6f4ec;color:#3a3a3a;font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;padding:7px 10px;text-align:left;border-bottom:1px solid #e0dcca}
+.pr-tbl tbody td{padding:6px 10px;border-bottom:1px solid #f0ecdc;color:#333;font-weight:500;font-family:'DM Mono',monospace;font-size:10.5px}
+.pr-tbl tbody tr:last-child td{border-bottom:none}
+.pr-tbl tbody tr:hover{background:#fafaf4}
+.pr-tbl .pr-st{font-family:'DM Sans',sans-serif;font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;padding:3px 8px;border-radius:10px;display:inline-block}
+.pr-tbl .pr-date{font-family:'DM Mono',monospace;font-size:10px;color:#666;white-space:nowrap}
+.pr-empty{color:#999;font-style:italic;font-size:10.5px;padding:8px 4px}
 .rd-value{font-size:12px;color:var(--text);font-weight:500}
 
 /* ─── PILLS ─── */
@@ -528,6 +540,11 @@ const SHEETS_TABS = {
   KEN: "KEN", MLU: "MLU", JBR: "JBR", GE: "GE",
   DVT: "ACOMPANHAMENTO DVT"
 };
+// Abas de pranchas por empreendimento (RIV_PR, CTM_PR, etc.)
+const PR_TABS = {
+  RIV: "RIV_PR", CTM: "CTM_PR", EXT: "EXT_PR",
+  KEN: "KEN_PR", MLU: "MLU_PR", JBR: "JBR_PR"
+};
 const EMP_NAMES = {
   RIV:"RIVIERA", CTM:"COSTAMARE", EXT:"EXCLUSIVE TIANGUA",
   KEN:"KENNEDY", MLU:"MARCOS LUCIANO", JBR:"JANE BRODER",
@@ -795,7 +812,7 @@ async function fetchNNSheet(){
   return _fetchTabWithFallbacks(NN_TAB_VARIANTS, "ACOMPANHAMENTO NN");
 }
 
-const CACHE_KEY = "conviver_sheets_cache_v8";
+const CACHE_KEY = "conviver_sheets_cache_v9";
 const CACHE_TTL = 5*60*1000; // 5 minutes
 
 function _gvizUrl(sheetName){
@@ -902,6 +919,33 @@ function parseDVTSheet(gviz){
   return out;
 }
 
+// Parser das abas _PR (pranchas por empreendimento)
+// Layout: A=PROJETOS, B=EDIFICAÇÕES, C=STATUS, D=PRANCHAS, E=DATA
+function parsePRSheet(gviz){
+  const rows = gviz.table.rows || [];
+  const out = [];
+  rows.forEach(r=>{
+    const cells = r.c || [];
+    const str = (ci)=>{
+      const c = cells[ci];
+      if(!c) return "";
+      const v = (c.f != null ? c.f : c.v);
+      return (v==null) ? "" : String(v).trim();
+    };
+    const projeto = str(0);
+    const edif    = str(1);
+    const status  = str(2);
+    const prancha = str(3);
+    const data    = str(4);
+    // Skip empty and header rows
+    if(!projeto && !prancha) return;
+    const upP = projeto.toUpperCase();
+    if(upP === "PROJETOS" || upP === "PROJETO") return;
+    out.push({projeto, edif, status, prancha, data});
+  });
+  return out;
+}
+
 async function fetchSheet(tabName){
   const url = _gvizUrl(tabName);
   const resp = await fetch(url, {cache:"no-store"});
@@ -930,11 +974,22 @@ async function loadFromSheets(forceRefresh){
   for(const key of ["RIV","CTM","EXT","KEN","MLU","JBR","GE"]){
     try {
       const gviz = await fetchSheet(SHEETS_TABS[key]);
-      newD[key] = {name: EMP_NAMES[key], rows: parseEmpSheet(gviz, key==="GE")};
+      newD[key] = {name: EMP_NAMES[key], rows: parseEmpSheet(gviz, key==="GE"), pranchas: []};
     } catch(e){
       console.error(`Erro ao carregar aba ${SHEETS_TABS[key]}:`, e);
       errors.push(`${SHEETS_TABS[key]}: ${e.message}`);
-      newD[key] = {name: EMP_NAMES[key], rows: []};
+      newD[key] = {name: EMP_NAMES[key], rows: [], pranchas: []};
+    }
+    // Fetch PR tab for this empreendimento (if any)
+    if(PR_TABS[key]){
+      try {
+        const prGviz = await fetchSheet(PR_TABS[key]);
+        newD[key].pranchas = parsePRSheet(prGviz);
+        console.log(`[${PR_TABS[key]}] ${newD[key].pranchas.length} pranchas carregadas`);
+      } catch(e){
+        console.warn(`Aba ${PR_TABS[key]} não encontrada ou vazia:`, e.message);
+        newD[key].pranchas = [];
+      }
     }
   }
 
@@ -1632,20 +1687,15 @@ function buildEmpV2(key){
         else tb+=`<td>${r[c.f]||'-'}</td>`;
       });
       tb+=`</tr>`;
-      if(hasObs){
-        tb+=`<tr class="row-detail" id="detail-${key}-${i}">
+      // Always emit a detail row with the filtered prancha list
+      tb+=`<tr class="row-detail" id="detail-${key}-${i}">
           <td colspan="${groupCols.length}">
-            <div class="row-detail-inner">
-              <div class="rd-item"><span class="rd-label">Projeto</span><span class="rd-value">${r.projeto||'-'}</span></div>
-              <div class="rd-item"><span class="rd-label">Pasta</span><span class="rd-value">${r.pasta||'-'}</span></div>
-              <div class="rd-item"><span class="rd-label">Setor</span><span class="rd-value">${r.setor||'-'}</span></div>
-              <div class="rd-item"><span class="rd-label">Fornecedor</span><span class="rd-value">${r.fornecedor||'-'}</span></div>
-              <div class="rd-item"><span class="rd-label">Prazo</span><span class="rd-value">${r.prazo||'-'}</span></div>
-              <div class="rd-item"><span class="rd-label">Observacao</span><span class="rd-value">${r.obs}</span></div>
+            <div class="pr-wrap" id="pr-wrap-${key}-${i}">
+              <div class="pr-ttl">Pranchas do Projeto <span class="pr-count" id="pr-count-${key}-${i}">…</span></div>
+              <div id="pr-body-${key}-${i}"><div class="pr-empty">Carregando…</div></div>
             </div>
           </td>
         </tr>`;
-      }
     });
     tb+=`</tbody>`;
 
@@ -1698,6 +1748,88 @@ function toggleDetail(key,i){
   const det=document.getElementById(`detail-${key}-${i}`);
   if(!det)return;
   det.classList.toggle('open');
+  if(det.classList.contains('open')){
+    renderPranchasForRow(key, i);
+  }
+}
+
+// Normaliza string para comparação tolerante (sem acento, caixa baixa, sem pontuação)
+function _normPr(s){
+  return (s||"").toString().toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .replace(/[^a-z0-9]+/g," ").trim();
+}
+
+// Extrai "base" da pasta: "EDIFICAÇÕES: CLUBE HOUSE" → "clube house"
+function _pastaBase(s){
+  const t = (s||"").toString();
+  const idx = t.indexOf(":");
+  const tail = (idx >= 0) ? t.substring(idx+1) : t;
+  return _normPr(tail);
+}
+
+// Renderiza lista de pranchas filtradas para a linha (key, índice)
+function renderPranchasForRow(key, i){
+  const body = document.getElementById(`pr-body-${key}-${i}`);
+  const cntEl = document.getElementById(`pr-count-${key}-${i}`);
+  if(!body) return;
+
+  const emp = D[key];
+  const row = emp?.rows?.[i];
+  if(!row){
+    body.innerHTML = `<div class="pr-empty">Dados indisponíveis</div>`;
+    if(cntEl) cntEl.textContent = "0";
+    return;
+  }
+  const pranchas = emp.pranchas || [];
+  if(!pranchas.length){
+    body.innerHTML = `<div class="pr-empty">Nenhuma prancha cadastrada para este empreendimento</div>`;
+    if(cntEl) cntEl.textContent = "0";
+    return;
+  }
+
+  const projAlvo  = _normPr(row.projeto);
+  const pastaAlvo = _pastaBase(row.pasta);
+
+  // Filtro: mesmo projeto E mesma edificação/pasta
+  const matches = pranchas.filter(p => {
+    const projMatch = _normPr(p.projeto) === projAlvo;
+    if(!projMatch) return false;
+    if(!pastaAlvo || !p.edif) return true;
+    return _normPr(p.edif) === pastaAlvo;
+  });
+
+  if(cntEl) cntEl.textContent = String(matches.length);
+
+  if(!matches.length){
+    body.innerHTML = `<div class="pr-empty">Nenhuma prancha encontrada para <b>${row.projeto||'-'}</b>${row.pasta?` em <b>${row.pasta}</b>`:''}</div>`;
+    return;
+  }
+
+  const stPill = (st)=>{
+    const u = (st||"").toString().toUpperCase();
+    let bg = "#eee", fg = "#555";
+    if(u.includes("CONCLU"))          { bg = "#dff5e8"; fg = "#1a7a3f"; }
+    else if(u.includes("ANDAM"))      { bg = "#fff3cc"; fg = "#8a6a00"; }
+    else if(u.includes("NAO") || u.includes("NÃO")) { bg = "#fde3e3"; fg = "#a03030"; }
+    return `<span class="pr-st" style="background:${bg};color:${fg}">${st||'-'}</span>`;
+  };
+
+  let html = `<table class="pr-tbl">
+    <thead><tr>
+      <th style="width:50%">Prancha</th>
+      <th>Status</th>
+      <th style="width:110px">Data</th>
+    </tr></thead><tbody>`;
+  matches.forEach(p=>{
+    html += `<tr>
+      <td>${p.prancha||'-'}</td>
+      <td>${stPill(p.status)}</td>
+      <td class="pr-date">${p.data||'-'}</td>
+    </tr>`;
+  });
+  html += `</tbody></table>`;
+  body.innerHTML = html;
 }
 
 // ── FILTERS ──
