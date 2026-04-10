@@ -1565,19 +1565,32 @@ function buildEmpV2(key){
     groupCols.forEach(c=>groupTh+=`<th class="${c.st?'sc ':''}${c.cls||''}">${c.l}</th>`);
     groupTh+=`</tr></thead>`;
 
-    // For Edificações: compute rowspans for the "projeto" column (merge identical consecutive)
-    // We mark the first row of each run with rowspan=N and skip the cell on subsequent rows.
+    // For Edificações: compute rowspans for the "projeto" column.
+    // Group by the BASE name (first word) so variants like "LUMINOTÉCNICO INTERNO"
+    // and "LUMINOTÉCNICO EXTERNO" merge under "LUMINOTÉCNICO".
     const projSpan = new Array(items.length).fill(1);
     const projSkip = new Array(items.length).fill(false);
+    const projLabel = new Array(items.length).fill(''); // label to display in the merged cell
     if(!isInfra){
+      const baseOf = (s)=>{
+        const t=(s||'').trim().toUpperCase();
+        if(!t) return '';
+        // Common multi-word bases that should stay together
+        const compounds = ['ARQUITETURA DE INTERIORES','COMUNICAÇÃO VISUAL'];
+        for(const c of compounds){ if(t.startsWith(c)) return c; }
+        // Otherwise use the first word
+        return t.split(/\s+/)[0];
+      };
       let i0=0;
       while(i0<items.length){
+        const curBase = baseOf(items[i0].r.projeto);
         let j=i0+1;
-        const cur=(items[i0].r.projeto||'').trim();
-        while(j<items.length && (items[j].r.projeto||'').trim()===cur && cur!==''){
+        while(j<items.length && curBase!=='' && baseOf(items[j].r.projeto)===curBase){
           projSkip[j]=true; j++;
         }
         projSpan[i0]=j-i0;
+        // Use the base name as the displayed label when more than one row was merged
+        projLabel[i0] = (j-i0>1) ? curBase : (items[i0].r.projeto||'');
         i0=j;
       }
     }
@@ -1595,7 +1608,8 @@ function buildEmpV2(key){
           if(!isInfra && projSkip[rowIdx]) return; // skip — merged into above
           const rs = (!isInfra && projSpan[rowIdx]>1) ? ` rowspan="${projSpan[rowIdx]}"` : '';
           const mergedCls = (!isInfra && projSpan[rowIdx]>1) ? ' merged-proj' : '';
-          tb+=`<td class="tp${mergedCls}"${rs}>${r.projeto||''}</td>`;
+          const label = (!isInfra && projSpan[rowIdx]>1) ? projLabel[rowIdx] : (r.projeto||'');
+          tb+=`<td class="tp${mergedCls}"${rs}>${label}</td>`;
         }
         else if(c.f==='pasta') tb+=`<td class="to" style="font-size:10px;font-weight:600;color:#555;white-space:nowrap">${r.pasta||'-'}</td>`;
         else if(c.f==='obs') tb+=`<td class="to">${r.obs||''}</td>`;
