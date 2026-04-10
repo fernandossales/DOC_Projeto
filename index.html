@@ -532,20 +532,22 @@ function parseContractsSheet(gviz){
     .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
     .replace(/[^a-z0-9]/g,"");
 
-  const synonyms = {
-    tipo:            ["tipo","categoria"],
-    cod:             ["cod","codigo","numero","num","contratoOC","oc","pc","obras"],
-    ano:             ["ano","year","exercicio"],
-    tipo_contrato:   ["tipocontrato","contrato","formalidade","formal"],
-    coligada:        ["coligada","empresa","sociedade","spe","razaosocial"],
-    contratado:      ["contratado","fornecedor","prestador","contratada","razao"],
-    empreendimento:  ["empreendimento","obra","projeto","emp"],
-    descricao:       ["descricao","desc","objeto","servico","escopo","historico"],
-    valor_total:     ["valortotal","valor","total","vlrtotal","vlrcontrato","valorcontrato","contratado"],
-    budget:          ["budget","orcamento","previsto","planejado","estimado"],
-    pago:            ["pago","valorpago","realizado","executado","medido","medicao","medicoes"],
-    pct:             ["pct","percentual","porcentagem","percent","%","avanco","fisico"],
-    saldo:           ["saldo","restante","aberto","pendente","apagar","faltante"]
+  // Strict synonyms — must match start of normalized header to avoid false positives
+  // (e.g. "contratado" must NOT match "contratado" header for valor_total)
+  const matchers = {
+    tipo:           (l)=> l==="tipo",
+    cod:            (l)=> l.startsWith("codcontr") || l==="cod" || l==="codigo" || l==="numero",
+    ano:            (l)=> l==="ano",
+    tipo_contrato:  (l)=> l.startsWith("tipoi") || l==="formal" || l==="tipocontrato",
+    coligada:       (l)=> l==="coligada" || l==="empresa" || l==="spe",
+    contratado:     (l)=> l==="contratado" || l==="fornecedor" || l==="prestador",
+    empreendimento: (l)=> l==="empreendimento" || l==="obra",
+    descricao:      (l)=> l==="descricao" || l==="desc" || l==="objeto",
+    valor_total:    (l)=> l==="valortotal" || l==="vlrtotal" || l==="valorcontrato",
+    budget:         (l)=> l==="budget" || l==="orcamento" || l==="planejado",
+    pago:           (l)=> l==="pago" || l==="valorpago" || l==="medido" || l==="medicao",
+    pct:            (l)=> l==="" || l==="pct" || l==="percentual" || l==="exec" || l==="avanco" || l==="execucao",
+    saldo:          (l)=> l==="saldo" || l==="restante" || l==="aberto" || l==="emaberto"
   };
 
   const tryHeader = (cellLabels)=>{
@@ -555,7 +557,7 @@ function parseContractsSheet(gviz){
       if(!label) return;
       for(const key of want){
         if(map[key] != null) continue;
-        if(synonyms[key].some(s => label === s || label.includes(s))){
+        if(matchers[key](label)){
           map[key] = i;
           break;
         }
@@ -566,18 +568,16 @@ function parseContractsSheet(gviz){
 
   // Strategy 1: cols[].label
   let idxMap = tryHeader(cols.map(c => c?.label || ""));
-  let headerRowIndex = -1;
   let dataStartIdx = 0;
 
-  // Strategy 2: scan first 6 rows for a row that looks like a header
-  if(Object.keys(idxMap).length < 5){
-    for(let i=0; i<Math.min(6, rows.length); i++){
+  // Strategy 2: scan first 8 rows for the best header row
+  if(Object.keys(idxMap).length < 8){
+    for(let i=0; i<Math.min(8, rows.length); i++){
       const cells = rows[i]?.c || [];
       const labels = cells.map(c => c ? (c.f != null ? c.f : c.v) : "");
       const candidate = tryHeader(labels);
       if(Object.keys(candidate).length > Object.keys(idxMap).length){
         idxMap = candidate;
-        headerRowIndex = i;
         dataStartIdx = i + 1;
       }
     }
@@ -586,15 +586,18 @@ function parseContractsSheet(gviz){
   console.log("[MEDIÇÕES] Header detection:", {
     colsLabels: cols.map(c => c?.label),
     detectedMap: idxMap,
-    headerRowIndex: headerRowIndex,
+    dataStartIdx: dataStartIdx,
     totalRows: rows.length
   });
 
-  // If still nothing, fall back to fixed positions (original Excel order)
-  if(Object.keys(idxMap).length < 5){
-    console.warn("[MEDIÇÕES] Detecção de cabeçalho falhou — usando posições fixas");
+  // Final fallback — known layout from screenshot:
+  // A=tipo, B=cod, C=ano, D=tipo_contrato, E=coligada, F=contratado, G=empreendimento,
+  // H=(vazia), I=descricao, J=valor_total, K=budget, L=pago, M=pct, N=saldo
+  if(Object.keys(idxMap).length < 8){
+    console.warn("[MEDIÇÕES] Detecção falhou — usando posições fixas conhecidas");
     idxMap = {tipo:0,cod:1,ano:2,tipo_contrato:3,coligada:4,contratado:5,
-              empreendimento:6,descricao:7,valor_total:8,budget:9,pago:10,pct:11,saldo:12};
+              empreendimento:6,descricao:8,valor_total:9,budget:10,pago:11,pct:12,saldo:13};
+    dataStartIdx = 4; // skip rows 1-4 (title + headers)
   }
 
   const out = [];
@@ -617,15 +620,24 @@ function parseContractsSheet(gviz){
     const contratado = str("contratado");
     const descricao = str("descricao");
     const valor_total = _parseNum(get("valor_total"));
+    const tipo = str("tipo");
 
     // Skip empty rows
-    if(!cod && !empName && !contratado && !descricao && !valor_total) continue;
+    if(!cod && !empName && !contratado && !descricao && !valor_total && !tipo) continue;
     // Skip header-like rows
     const upCod = cod.toUpperCase();
-    if(upCod === "COD" || upCod === "CÓDIGO" || upCod.includes("NUMERO")) continue;
+    if(upCod === "COD" || upCod.startsWith("COD.") || upCod.startsWith("CÓD") || upCod === "CÓDIGO") continue;
+    if(tipo.toUpperCase() === "TIPO") continue;
+
+    const pago = _parseNum(get("pago"));
+    let saldo = _parseNum(get("saldo"));
+    let pct = _parseNum(get("pct"));
+    // Compute saldo/pct if missing
+    if(!saldo && valor_total) saldo = valor_total - pago;
+    if(!pct && valor_total) pct = pago / valor_total;
 
     out.push({
-      tipo: str("tipo"),
+      tipo: tipo,
       cod: cod,
       ano: str("ano"),
       tipo_contrato: str("tipo_contrato"),
@@ -635,9 +647,9 @@ function parseContractsSheet(gviz){
       descricao: descricao,
       valor_total: valor_total,
       budget:      _parseNum(get("budget")),
-      pago:        _parseNum(get("pago")),
-      pct:         _parseNum(get("pct")),
-      saldo:       _parseNum(get("saldo"))
+      pago:        pago,
+      pct:         pct,
+      saldo:       saldo
     });
   }
   console.log(`[MEDIÇÕES] Parseados ${out.length} contratos`);
@@ -706,7 +718,7 @@ async function fetchNNSheet(){
   return _fetchTabWithFallbacks(NN_TAB_VARIANTS, "ACOMPANHAMENTO NN");
 }
 
-const CACHE_KEY = "conviver_sheets_cache_v5";
+const CACHE_KEY = "conviver_sheets_cache_v6";
 const CACHE_TTL = 5*60*1000; // 5 minutes
 
 function _gvizUrl(sheetName){
