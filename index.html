@@ -383,122 +383,232 @@ body.locked > *:not(#login-overlay){filter:blur(8px) brightness(.6);pointer-even
    RESPONSIVE — não afeta desktop (>1024px)
    ═════════════════════════════════════════════════════════ */
 
+/* ─── Anti-vazamento global (todas resoluções) ─── */
+html,body{max-width:100vw;overflow-x:hidden}
+.page,.pb,.sec,section,main{max-width:100%}
+
 /* ─── TABLET: 768px a 1024px ─── */
 @media (max-width: 1024px){
   header{padding:0 18px}
   .hdr-title{font-size:13px;letter-spacing:2px}
   .logo-wrap img{height:32px}
-  .tab-bar{overflow-x:auto;overflow-y:hidden;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
-  .tab-bar::-webkit-scrollbar{height:4px}
-  .tab-bar::-webkit-scrollbar-thumb{background:#2eb86e;border-radius:4px}
+  .tab-bar{overflow-x:auto;overflow-y:hidden;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:thin;padding:0 12px}
+  .tab-bar::-webkit-scrollbar{display:none}
   .tab-btn{flex:0 0 auto;font-size:10px;padding:12px 14px;white-space:nowrap}
-  .pb{padding:18px 24px}
+  .pb{padding:18px 16px}
   .kpi-grid{grid-template-columns:repeat(3,1fr)!important;gap:10px}
-  .chart-card,.gcrd,.dvt-card{padding:14px}
+  .chart-card,.gcrd,.dvt-card{padding:14px;min-width:0}
   .ch{height:auto!important;min-height:220px}
   .ch canvas{max-width:100%!important;height:auto!important}
-  .tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
-  .tw table{min-width:760px}
+  .tw{overflow-x:auto;-webkit-overflow-scrolling:touch;width:100%;max-width:100%}
+  .tw table{min-width:720px}
   .emp-hdr{flex-wrap:wrap;gap:14px}
   .emp-stats{flex-wrap:wrap;gap:10px}
   .fbar{flex-wrap:wrap;gap:10px}
   .fbar select,.fbar input{min-width:120px}
-  .pasta-hdr{padding:12px 16px}
-  .pasta-ttl{font-size:11px}
 }
 
 /* ─── MOBILE: abaixo de 768px ─── */
 @media (max-width: 768px){
-  header{flex-wrap:wrap;padding:10px 14px;min-height:auto;gap:8px}
-  .logo-wrap{flex:1 1 auto}
-  .logo-wrap img{height:28px}
-  .hdr-title{flex:1 1 100%;order:3;text-align:center;font-size:11px;letter-spacing:1.5px;margin-top:4px}
-  .hdr-right{margin-left:auto}
-  .hdr-refresh{width:30px;height:30px}
-  .hdr-update{font-size:9px}
+  html,body{width:100%;max-width:100vw;overflow-x:hidden}
+  body{font-size:12px}
 
-  /* Tabs: barra rolável horizontal com swipe */
-  .tab-bar{padding:0;overflow-x:auto;overflow-y:hidden;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  /* Header do site respeitando safe-area (notch / barra Safari) */
+  header{
+    flex-wrap:wrap;
+    padding:calc(env(safe-area-inset-top,0px) + 10px) 14px 10px;
+    min-height:auto;
+    gap:8px;
+    position:relative;
+    z-index:10;
+  }
+  .logo-wrap{flex:0 0 auto}
+  .logo-wrap img{height:26px}
+  .hdr-title{
+    flex:1 1 100%;
+    order:3;
+    text-align:center;
+    font-size:11px;
+    letter-spacing:1.2px;
+    margin-top:4px;
+    white-space:normal;
+  }
+  .hdr-right{margin-left:auto;flex:0 0 auto}
+  .hdr-refresh{width:32px;height:32px}
+  #last-update{font-size:9px}
+
+  /* TABS: scroll horizontal só na barra, compactos */
+  .tab-bar{
+    padding:0 8px;
+    overflow-x:auto;
+    overflow-y:hidden;
+    flex-wrap:nowrap;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+    width:100%;
+    max-width:100vw;
+  }
   .tab-bar::-webkit-scrollbar{display:none}
-  .tab-btn{flex:0 0 auto;font-size:10px;padding:12px 12px;letter-spacing:.8px;white-space:nowrap;min-width:auto}
+  .tab-btn{
+    flex:0 0 auto;
+    font-size:9.5px;
+    padding:11px 10px;
+    letter-spacing:.6px;
+    white-space:nowrap;
+    min-width:auto;
+  }
 
-  .pb{padding:14px 12px}
-  .sec{margin-bottom:18px}
-  .sec-title{font-size:10px;padding:10px 12px}
+  /* PAGES: padding reduzido mas sem vazamento */
+  .page{width:100%;max-width:100%;overflow-x:hidden}
+  .pb{padding:12px 10px;width:100%;max-width:100%}
+  .sec{margin-bottom:16px;width:100%;max-width:100%;min-width:0}
+  .sec-title{font-size:10px;padding:10px 12px;word-break:break-word}
 
-  /* KPIs: 2 colunas no mobile */
-  .kpi-grid{grid-template-columns:repeat(2,1fr)!important;gap:8px}
-  .kpi-card{padding:12px 10px!important}
-  #page-dash .kpi-num{font-size:24px!important}
-  #page-dash .kpi-lbl{font-size:8px}
+  /* KPIs: 2 colunas ocupando largura total */
+  .kpi-grid{
+    display:grid!important;
+    grid-template-columns:repeat(2,1fr)!important;
+    gap:8px!important;
+    width:100%;
+  }
+  .kpi-card{padding:12px 10px!important;min-width:0;width:100%}
+  #page-dash .kpi-num,.kpi-num{font-size:22px!important}
+  #page-dash .kpi-lbl,.kpi-lbl{font-size:8px}
 
-  /* Cards e gráficos ocupam largura total */
-  .chart-grid,.grid-2,.grid-3,.grid-4,.row{grid-template-columns:1fr!important;display:grid!important;gap:12px!important}
-  .chart-card,.gcrd,.dvt-card{padding:12px!important;margin-bottom:0}
-  .chart-head{font-size:10px}
-  .ch{height:auto!important;min-height:240px;max-height:360px}
-  .ch canvas{max-width:100%!important;height:auto!important;width:100%!important}
+  /* Grids de cards → 1 coluna full width */
+  .chart-grid,.grid-2,.grid-3,.grid-4,.row,.dvt-grid,.sup-grid{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:12px!important;
+    width:100%;
+  }
+  .chart-card,.gcrd,.dvt-card{
+    padding:12px!important;
+    margin-bottom:0;
+    width:100%;
+    max-width:100%;
+    min-width:0;
+  }
+  .chart-head{font-size:10px;word-break:break-word}
 
-  /* Header dos empreendimentos */
-  .emp-hdr{flex-direction:column;align-items:flex-start;gap:10px;padding:14px}
-  .emp-nm{font-size:18px}
-  .emp-stats{width:100%;flex-wrap:wrap;gap:8px}
-  .emp-stats .es{flex:1 1 calc(50% - 4px);min-width:calc(50% - 4px);padding:10px}
+  /* GRÁFICOS: 100% fluido */
+  .ch{height:auto!important;min-height:240px;max-height:380px;width:100%;max-width:100%}
+  .ch canvas{
+    max-width:100%!important;
+    width:100%!important;
+    height:auto!important;
+  }
+
+  /* EMPREENDIMENTOS — header/stats */
+  .emp-hdr{
+    flex-direction:column;
+    align-items:stretch;
+    gap:10px;
+    padding:14px 12px;
+    width:100%;
+  }
+  .emp-nm{font-size:17px}
+  .emp-stats{
+    display:grid!important;
+    grid-template-columns:repeat(2,1fr)!important;
+    gap:8px;
+    width:100%;
+  }
+  .emp-stats .es{flex:unset;min-width:0;padding:10px;width:100%}
   .emp-stats .es-n{font-size:18px}
   .emp-stats .es-l{font-size:8px}
 
-  /* Filtros em coluna */
-  .fbar{flex-direction:column;align-items:stretch;gap:8px;padding:10px}
-  .fbar > *{width:100%}
-  .fbar select,.fbar input{width:100%;min-width:0;font-size:12px}
+  /* FILTROS — empilhados */
+  .fbar{
+    display:flex!important;
+    flex-direction:column;
+    align-items:stretch;
+    gap:8px;
+    padding:10px 12px;
+    width:100%;
+  }
+  .fbar > *{width:100%;min-width:0;box-sizing:border-box}
   .fbar label{font-size:9px}
+  .fbar select,.fbar input{width:100%;min-width:0;font-size:12px;padding:9px 10px}
 
-  /* Tabelas com scroll horizontal */
-  .tw{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -4px;padding:0 4px}
-  .tw table{min-width:680px;font-size:10px}
-  .tw th,.tw td{padding:8px 10px!important}
+  /* TABELAS — scroll interno no container, nunca na página */
+  .tw{
+    overflow-x:auto;
+    overflow-y:hidden;
+    -webkit-overflow-scrolling:touch;
+    width:100%;
+    max-width:100%;
+    margin:0;
+    padding:0;
+    border-radius:0 0 8px 8px;
+  }
+  .tw table{
+    min-width:720px;
+    font-size:10px;
+    width:auto;
+  }
+  .tw th,.tw td{padding:7px 8px!important;white-space:normal}
+
+  /* Contratos: valores precisam mais espaço pra não colidir */
+  #page-CTR .tw table{min-width:900px}
+  .pr-tbl{min-width:560px}
   .pill{font-size:8.5px;padding:2px 6px}
 
   /* Grupos de pasta */
-  .pasta-hdr{padding:10px 12px}
-  .pasta-ttl{font-size:10px;letter-spacing:1px}
+  .pasta-hdr{padding:10px 12px;gap:8px}
+  .pasta-ttl{font-size:10px;letter-spacing:.8px;word-break:break-word}
   .pasta-count{font-size:8px;padding:2px 8px}
-  .pasta-body{padding:0}
+  .pasta-body{padding:0;width:100%;max-width:100%;overflow:hidden}
 
-  /* Contratos — tabela de fornecedores */
-  .sup-grid{grid-template-columns:1fr!important}
-
-  /* Modal de empreendimento */
-  .emp-modal{width:95vw!important;max-width:95vw!important;max-height:90vh!important}
-  .emp-modal-body{padding:14px!important;max-height:calc(90vh - 80px)!important;overflow-y:auto}
-  .emp-modal-body table{min-width:600px}
+  /* MODAIS */
+  .emp-modal{
+    width:94vw!important;
+    max-width:94vw!important;
+    max-height:90vh!important;
+    margin:0;
+  }
+  .emp-modal-body{
+    padding:14px!important;
+    max-height:calc(90vh - 80px)!important;
+    overflow-y:auto;
+    overflow-x:hidden;
+  }
+  .emp-modal-body .tw{overflow-x:auto}
+  .emp-modal-body table{min-width:560px}
 
   /* Login modal */
-  .login-box{width:88vw;padding:32px 24px 28px}
-  .login-title{font-size:11px;letter-spacing:1.5px}
-  .login-logo img{height:36px}
+  .login-box{width:88vw;max-width:88vw;padding:32px 22px 26px}
+  .login-title{font-size:11px;letter-spacing:1.2px}
+  .login-logo img{height:34px}
 
-  /* Tooltip custom some no mobile (hover não existe) */
-  .custom-tooltip{display:none!important}
+  /* Tooltip custom some no mobile */
+  .custom-tooltip,.ctip{display:none!important}
 
-  /* NN kpis */
-  #page-dash #nn-section .kpi-card{padding:10px!important}
+  /* Footer estático, não sobreposto */
+  footer,.foot{
+    position:static!important;
+    font-size:9px;
+    padding:12px 10px;
+    text-align:center;
+    width:100%;
+    word-break:break-word;
+  }
 
-  /* DVT cards */
-  .dvt-grid{grid-template-columns:1fr!important}
-
-  /* Footer */
-  footer,.foot{font-size:9px;padding:12px;text-align:center}
+  /* Safety net — qualquer elemento com min-width fixo herdado */
+  .chart-card *,.gcrd *,.dvt-card *,.kpi-card *{max-width:100%}
+  img,svg,canvas{max-width:100%;height:auto}
 }
 
 /* ─── MOBILE pequeno: abaixo de 480px ─── */
 @media (max-width: 480px){
-  .kpi-grid{grid-template-columns:1fr!important}
-  .emp-stats .es{flex:1 1 100%;min-width:100%}
-  .hdr-title{font-size:10px}
-  .tab-btn{font-size:9px;padding:10px 10px}
+  .pb{padding:10px 8px}
+  .hdr-title{font-size:10px;letter-spacing:1px}
+  .tab-btn{font-size:9px;padding:10px 9px}
   .tw table{font-size:9.5px}
-  .tw th,.tw td{padding:6px 8px!important}
+  .tw th,.tw td{padding:6px 7px!important}
+  .emp-stats{grid-template-columns:repeat(2,1fr)!important}
+  .emp-stats .es-n{font-size:16px}
+  .kpi-num,#page-dash .kpi-num{font-size:20px!important}
 }
 </style>
 </head>
