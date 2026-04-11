@@ -1671,7 +1671,7 @@ function buildEmpV2(key){
       const hasAnd=[r.ep,r.ap,r.pl,r.pe,r.ab].some(v=>v===A);
       const hasObs=r.obs&&r.obs.trim();
       const rowClass=hasAnd?'pulse-row':'';
-      tb+=`<tr class="${rowClass}" data-i="${i}" data-tb="tb-${key}" onclick="toggleDetail('${key}',${i})">`;
+      tb+=`<tr class="${rowClass}" data-i="${i}" data-tb="tb-${key}">`;
       groupCols.forEach(c=>{
         if(c.f==='status') tb+=`<td class="status-col">${statusPill(r)}</td>`;
         else if(c.st) tb+=`<td>${pill(r[c.f])}</td>`;
@@ -1687,15 +1687,6 @@ function buildEmpV2(key){
         else tb+=`<td>${r[c.f]||'-'}</td>`;
       });
       tb+=`</tr>`;
-      // Always emit a detail row with the filtered prancha list
-      tb+=`<tr class="row-detail" id="detail-${key}-${i}">
-          <td colspan="${groupCols.length}">
-            <div class="pr-wrap" id="pr-wrap-${key}-${i}">
-              <div class="pr-ttl">Pranchas do Projeto <span class="pr-count" id="pr-count-${key}-${i}">…</span></div>
-              <div id="pr-body-${key}-${i}"><div class="pr-empty">Carregando…</div></div>
-            </div>
-          </td>
-        </tr>`;
     });
     tb+=`</tbody>`;
 
