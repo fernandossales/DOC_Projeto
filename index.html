@@ -599,6 +599,64 @@ html,body{max-width:100vw;overflow-x:hidden}
   img,svg,canvas{max-width:100%;height:auto}
 }
 
+/* ═══════════ ONDA 13 — MELHORIAS MOBILE ═══════════ */
+/* Select de navegação mobile (escondido em desktop) */
+.tab-select-wrap{display:none}
+.tab-select-wrap select{
+  width:100%;appearance:none;-webkit-appearance:none;
+  background:var(--dark) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' stroke='%232eb86e' stroke-width='2' fill='none' stroke-linecap='round'/></svg>") no-repeat right 14px center;
+  color:#fff;border:none;border-bottom:2px solid var(--green);
+  font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;
+  letter-spacing:.5px;padding:14px 38px 14px 16px;
+  border-radius:0;cursor:pointer;outline:none;
+}
+.tab-select-wrap select:focus{background-color:#202020}
+
+/* Cards de projeto no mobile (gerados via JS a partir das tabelas) */
+.mob-cards{display:none}
+.mob-card{
+  background:#fff;border-radius:10px;padding:13px 14px;margin-bottom:10px;
+  box-shadow:0 2px 10px rgba(0,0,0,.06),0 0 0 1px rgba(0,0,0,.06);
+  border-left:3px solid var(--green);
+}
+.mob-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px}
+.mob-card-title{font-size:13px;font-weight:700;color:var(--text);line-height:1.25;flex:1;min-width:0;word-break:break-word}
+.mob-card-pasta{
+  font-size:8.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;
+  color:var(--gray-600);background:var(--gray-100);
+  padding:3px 8px;border-radius:4px;white-space:nowrap;flex-shrink:0;
+}
+.mob-card-rows{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;margin-top:6px}
+.mob-card-row{display:flex;flex-direction:column;gap:1px;min-width:0}
+.mob-card-lbl{font-size:8px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--gray-600)}
+.mob-card-val{font-size:11px;font-weight:600;color:var(--text);word-break:break-word;line-height:1.3}
+.mob-card-row.full{grid-column:1/-1}
+.mob-card.status-ok{border-left-color:var(--green)}
+.mob-card.status-warn{border-left-color:var(--yellow)}
+.mob-card.status-late{border-left-color:var(--red)}
+
+@media (max-width:768px){
+  /* 1) Title central some — libera espaço no header */
+  .hdr-title{display:none!important}
+  header{padding:calc(env(safe-area-inset-top,0px) + 10px) 14px 10px;justify-content:space-between}
+
+  /* 2) Esconder botões de tab, mostrar select */
+  .tab-bar{display:none!important}
+  .tab-select-wrap{display:block;position:sticky;top:0;z-index:190;background:var(--dark)}
+
+  /* 3) Tabela some, cards aparecem */
+  .tw{display:none!important}
+  .mob-cards{display:block;width:100%;padding:4px 2px 8px}
+
+  /* 4) Toque mínimo 44px (Apple HIG) em controles interativos */
+  .fbar select,.fbar input,.hdr-refresh,.pasta-hdr{min-height:44px}
+  .pasta-hdr{align-items:center}
+
+  /* 5) Auto-hide das tabs ao rolar pra baixo */
+  .tab-select-wrap{transition:transform .25s var(--ease)}
+  body.scrolled-down .tab-select-wrap{transform:translateY(-100%)}
+}
+
 /* ─── MOBILE pequeno: abaixo de 480px ─── */
 @media (max-width: 480px){
   .pb{padding:10px 8px}
@@ -690,6 +748,21 @@ setTimeout(()=>{ const u=document.getElementById('login-user'); if(u && !u.disab
   <button type="button" role="tab" class="tab-btn" onclick="showTab('DVT',this)">Acomp. DVT</button>
   <button type="button" role="tab" class="tab-btn" onclick="showTab('NN',this)">Acomp. NN</button>
   <button type="button" role="tab" class="tab-btn" onclick="showTab('CTR',this)">Contratos &amp; Med.</button>
+</div>
+<div class="tab-select-wrap" aria-hidden="false">
+  <select id="mob-tab-select" aria-label="Selecionar seção" onchange="mobTabChange(this.value)">
+    <option value="dash">📊 Dashboard</option>
+    <option value="RIV">Riviera</option>
+    <option value="CTM">Costamare</option>
+    <option value="EXT">Exclusive Tianguá</option>
+    <option value="KEN">Kennedy</option>
+    <option value="MLU">Marcos Luciano</option>
+    <option value="JBR">Jane Broder</option>
+    <option value="GE">Gestão Empreendimentos</option>
+    <option value="DVT">Acompanhamento DVT</option>
+    <option value="NN">Acompanhamento NN</option>
+    <option value="CTR">Contratos &amp; Medições</option>
+  </select>
 </div>
 
 <!-- CUSTOM TOOLTIP -->
@@ -3157,6 +3230,112 @@ window.__convDebug = ()=>({
   nn: (typeof NN_DATA !== 'undefined' ? NN_DATA.length : 0),
   cache: localStorage.getItem(CACHE_KEY) ? 'presente' : 'ausente'
 });
+</script>
+<script>
+/* ═══════════ ONDA 13 — JS ═══════════ */
+(function(){
+  // 1) Select mobile -> dispara showTab e atualiza estado
+  window.mobTabChange = function(val){
+    var btn = document.querySelector('.tab-btn[onclick*="\'' + val + '\'"]');
+    if(btn && typeof showTab === 'function'){ showTab(val, btn); }
+    window.scrollTo({top:0, behavior:'smooth'});
+  };
+
+  // 2) Sincroniza select quando usuário clica numa tab (desktop)
+  document.querySelectorAll('.tab-btn').forEach(function(b){
+    b.addEventListener('click', function(){
+      var m = (b.getAttribute('onclick')||'').match(/showTab\('([^']+)'/);
+      var sel = document.getElementById('mob-tab-select');
+      if(m && sel){ sel.value = m[1]; }
+    });
+  });
+
+  // 3) Auto-hide do tab-select-wrap ao rolar pra baixo
+  var lastY = 0, ticking = false;
+  window.addEventListener('scroll', function(){
+    if(ticking) return;
+    window.requestAnimationFrame(function(){
+      var y = window.scrollY || 0;
+      if(y > lastY + 6 && y > 80){ document.body.classList.add('scrolled-down'); }
+      else if(y < lastY - 6){ document.body.classList.remove('scrolled-down'); }
+      lastY = y;
+      ticking = false;
+    });
+    ticking = true;
+  }, {passive:true});
+
+  // 4) Tabela -> cards mobile
+  // Para cada .tw > table, gera um irmão .mob-cards com 1 card por linha.
+  // Detecta status pela classe .pill-* ou texto contendo "Atrasad"/"Concluí".
+  function classifyStatus(rowEl){
+    var t = (rowEl.textContent||'').toLowerCase();
+    if(rowEl.querySelector('.pill-r,.pill-red,.st-late')) return 'status-late';
+    if(/atras/.test(t)) return 'status-late';
+    if(rowEl.querySelector('.pill-y,.pill-yellow')) return 'status-warn';
+    if(/pendent|aguard/.test(t)) return 'status-warn';
+    return 'status-ok';
+  }
+
+  function buildMobileCards(){
+    document.querySelectorAll('.tw').forEach(function(tw){
+      if(tw.parentNode.querySelector(':scope > .mob-cards')) return; // já gerado
+      var table = tw.querySelector('table'); if(!table) return;
+      var headers = Array.from(table.querySelectorAll('thead th')).map(function(th){return (th.textContent||'').trim();});
+      if(!headers.length) return;
+      var rows = table.querySelectorAll('tbody tr');
+      if(!rows.length) return;
+
+      var wrap = document.createElement('div');
+      wrap.className = 'mob-cards';
+
+      rows.forEach(function(tr){
+        var cells = tr.querySelectorAll('td');
+        if(!cells.length) return;
+        var card = document.createElement('div');
+        card.className = 'mob-card ' + classifyStatus(tr);
+
+        // Heurística: 1ª coluna = título (Projeto). 2ª = pasta (se existir). Demais = rows.
+        var titleTxt = (cells[0]?.textContent||'').trim();
+        var pastaTxt = headers[1] && /pasta/i.test(headers[1]) ? (cells[1]?.textContent||'').trim() : '';
+
+        var top = document.createElement('div');
+        top.className = 'mob-card-top';
+        top.innerHTML = '<div class="mob-card-title">'+titleTxt+'</div>' +
+          (pastaTxt ? '<div class="mob-card-pasta">'+pastaTxt+'</div>' : '');
+        card.appendChild(top);
+
+        var rowsWrap = document.createElement('div');
+        rowsWrap.className = 'mob-card-rows';
+        var startIdx = pastaTxt ? 2 : 1;
+        for(var i=startIdx; i<cells.length && i<headers.length; i++){
+          var val = (cells[i].innerHTML||'').trim();
+          var lbl = headers[i];
+          if(!val || val==='—' || val==='-') continue;
+          var isStatus = /status|etapa|fase/i.test(lbl);
+          var r = document.createElement('div');
+          r.className = 'mob-card-row' + (isStatus ? ' full' : '');
+          r.innerHTML = '<div class="mob-card-lbl">'+lbl+'</div><div class="mob-card-val">'+val+'</div>';
+          rowsWrap.appendChild(r);
+        }
+        card.appendChild(rowsWrap);
+        wrap.appendChild(card);
+      });
+
+      tw.parentNode.insertBefore(wrap, tw.nextSibling);
+    });
+  }
+
+  // Roda no load e sempre que a tab muda (algumas tabelas só existem após showTab)
+  function rebuildSoon(){ setTimeout(buildMobileCards, 60); }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', rebuildSoon);
+  else rebuildSoon();
+
+  // Hook no showTab existente para regerar quando entrar numa página
+  if(typeof window.showTab === 'function'){
+    var _orig = window.showTab;
+    window.showTab = function(id, el){ _orig(id, el); rebuildSoon(); };
+  }
+})();
 </script>
 </body>
 </html>
