@@ -379,6 +379,127 @@ td:last-child{border-right:none}
 .login-foot{text-align:center;color:#3a3a3d;font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;margin-top:24px;padding-top:18px;border-top:1px solid #1c1c1f}
 body.locked{overflow:hidden}
 body.locked > *:not(#login-overlay){filter:blur(8px) brightness(.6);pointer-events:none;user-select:none}
+/* ═════════════════════════════════════════════════════════
+   RESPONSIVE — não afeta desktop (>1024px)
+   ═════════════════════════════════════════════════════════ */
+
+/* ─── TABLET: 768px a 1024px ─── */
+@media (max-width: 1024px){
+  header{padding:0 18px}
+  .hdr-title{font-size:13px;letter-spacing:2px}
+  .logo-wrap img{height:32px}
+  .tab-bar{overflow-x:auto;overflow-y:hidden;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
+  .tab-bar::-webkit-scrollbar{height:4px}
+  .tab-bar::-webkit-scrollbar-thumb{background:#2eb86e;border-radius:4px}
+  .tab-btn{flex:0 0 auto;font-size:10px;padding:12px 14px;white-space:nowrap}
+  .pb{padding:18px 24px}
+  .kpi-grid{grid-template-columns:repeat(3,1fr)!important;gap:10px}
+  .chart-card,.gcrd,.dvt-card{padding:14px}
+  .ch{height:auto!important;min-height:220px}
+  .ch canvas{max-width:100%!important;height:auto!important}
+  .tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .tw table{min-width:760px}
+  .emp-hdr{flex-wrap:wrap;gap:14px}
+  .emp-stats{flex-wrap:wrap;gap:10px}
+  .fbar{flex-wrap:wrap;gap:10px}
+  .fbar select,.fbar input{min-width:120px}
+  .pasta-hdr{padding:12px 16px}
+  .pasta-ttl{font-size:11px}
+}
+
+/* ─── MOBILE: abaixo de 768px ─── */
+@media (max-width: 768px){
+  header{flex-wrap:wrap;padding:10px 14px;min-height:auto;gap:8px}
+  .logo-wrap{flex:1 1 auto}
+  .logo-wrap img{height:28px}
+  .hdr-title{flex:1 1 100%;order:3;text-align:center;font-size:11px;letter-spacing:1.5px;margin-top:4px}
+  .hdr-right{margin-left:auto}
+  .hdr-refresh{width:30px;height:30px}
+  .hdr-update{font-size:9px}
+
+  /* Tabs: barra rolável horizontal com swipe */
+  .tab-bar{padding:0;overflow-x:auto;overflow-y:hidden;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .tab-bar::-webkit-scrollbar{display:none}
+  .tab-btn{flex:0 0 auto;font-size:10px;padding:12px 12px;letter-spacing:.8px;white-space:nowrap;min-width:auto}
+
+  .pb{padding:14px 12px}
+  .sec{margin-bottom:18px}
+  .sec-title{font-size:10px;padding:10px 12px}
+
+  /* KPIs: 2 colunas no mobile */
+  .kpi-grid{grid-template-columns:repeat(2,1fr)!important;gap:8px}
+  .kpi-card{padding:12px 10px!important}
+  #page-dash .kpi-num{font-size:24px!important}
+  #page-dash .kpi-lbl{font-size:8px}
+
+  /* Cards e gráficos ocupam largura total */
+  .chart-grid,.grid-2,.grid-3,.grid-4,.row{grid-template-columns:1fr!important;display:grid!important;gap:12px!important}
+  .chart-card,.gcrd,.dvt-card{padding:12px!important;margin-bottom:0}
+  .chart-head{font-size:10px}
+  .ch{height:auto!important;min-height:240px;max-height:360px}
+  .ch canvas{max-width:100%!important;height:auto!important;width:100%!important}
+
+  /* Header dos empreendimentos */
+  .emp-hdr{flex-direction:column;align-items:flex-start;gap:10px;padding:14px}
+  .emp-nm{font-size:18px}
+  .emp-stats{width:100%;flex-wrap:wrap;gap:8px}
+  .emp-stats .es{flex:1 1 calc(50% - 4px);min-width:calc(50% - 4px);padding:10px}
+  .emp-stats .es-n{font-size:18px}
+  .emp-stats .es-l{font-size:8px}
+
+  /* Filtros em coluna */
+  .fbar{flex-direction:column;align-items:stretch;gap:8px;padding:10px}
+  .fbar > *{width:100%}
+  .fbar select,.fbar input{width:100%;min-width:0;font-size:12px}
+  .fbar label{font-size:9px}
+
+  /* Tabelas com scroll horizontal */
+  .tw{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -4px;padding:0 4px}
+  .tw table{min-width:680px;font-size:10px}
+  .tw th,.tw td{padding:8px 10px!important}
+  .pill{font-size:8.5px;padding:2px 6px}
+
+  /* Grupos de pasta */
+  .pasta-hdr{padding:10px 12px}
+  .pasta-ttl{font-size:10px;letter-spacing:1px}
+  .pasta-count{font-size:8px;padding:2px 8px}
+  .pasta-body{padding:0}
+
+  /* Contratos — tabela de fornecedores */
+  .sup-grid{grid-template-columns:1fr!important}
+
+  /* Modal de empreendimento */
+  .emp-modal{width:95vw!important;max-width:95vw!important;max-height:90vh!important}
+  .emp-modal-body{padding:14px!important;max-height:calc(90vh - 80px)!important;overflow-y:auto}
+  .emp-modal-body table{min-width:600px}
+
+  /* Login modal */
+  .login-box{width:88vw;padding:32px 24px 28px}
+  .login-title{font-size:11px;letter-spacing:1.5px}
+  .login-logo img{height:36px}
+
+  /* Tooltip custom some no mobile (hover não existe) */
+  .custom-tooltip{display:none!important}
+
+  /* NN kpis */
+  #page-dash #nn-section .kpi-card{padding:10px!important}
+
+  /* DVT cards */
+  .dvt-grid{grid-template-columns:1fr!important}
+
+  /* Footer */
+  footer,.foot{font-size:9px;padding:12px;text-align:center}
+}
+
+/* ─── MOBILE pequeno: abaixo de 480px ─── */
+@media (max-width: 480px){
+  .kpi-grid{grid-template-columns:1fr!important}
+  .emp-stats .es{flex:1 1 100%;min-width:100%}
+  .hdr-title{font-size:10px}
+  .tab-btn{font-size:9px;padding:10px 10px}
+  .tw table{font-size:9.5px}
+  .tw th,.tw td{padding:6px 8px!important}
+}
 </style>
 </head>
 <body class="locked">
