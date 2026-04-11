@@ -672,24 +672,24 @@ setTimeout(()=>{ const u=document.getElementById('login-user'); if(u && !u.disab
   <div class="hdr-title">Acompanhamento de Projetos</div>
   <div class="hdr-right">
     <span id="last-update" class="hdr-update" title="Última atualização"></span>
-    <button id="refresh-btn" class="hdr-refresh" onclick="reloadAllFromSheets(true)" title="Atualizar dados da planilha">
+    <button id="refresh-btn" class="hdr-refresh" onclick="reloadAllFromSheets(true)" title="Atualizar dados da planilha" aria-label="Atualizar dados da planilha" type="button">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
     </button>
   </div>
 </header>
 
-<div class="tab-bar">
-  <button class="tab-btn dtab active" onclick="showTab('dash',this)">Dashboard</button>
-  <button class="tab-btn" onclick="showTab('RIV',this)">Riviera</button>
-  <button class="tab-btn" onclick="showTab('CTM',this)">Costamare</button>
-  <button class="tab-btn" onclick="showTab('EXT',this)">Exclusive Tianguá</button>
-  <button class="tab-btn" onclick="showTab('KEN',this)">Kennedy</button>
-  <button class="tab-btn" onclick="showTab('MLU',this)">Marcos Luciano</button>
-  <button class="tab-btn" onclick="showTab('JBR',this)">Jane Broder</button>
-  <button class="tab-btn" onclick="showTab('GE',this)">Gestão Emp.</button>
-  <button class="tab-btn" onclick="showTab('DVT',this)">Acomp. DVT</button>
-  <button class="tab-btn" onclick="showTab('NN',this)">Acomp. NN</button>
-  <button class="tab-btn" onclick="showTab('CTR',this)">Contratos &amp; Med.</button>
+<div class="tab-bar" role="tablist" aria-label="Navegação principal">
+  <button type="button" role="tab" class="tab-btn dtab active" onclick="showTab('dash',this)">Dashboard</button>
+  <button type="button" role="tab" class="tab-btn" onclick="showTab('RIV',this)">Riviera</button>
+  <button type="button" role="tab" class="tab-btn" onclick="showTab('CTM',this)">Costamare</button>
+  <button type="button" role="tab" class="tab-btn" onclick="showTab('EXT',this)">Exclusive Tianguá</button>
+  <button type="button" role="tab" class="tab-btn" onclick="showTab('KEN',this)">Kennedy</button>
+  <button type="button" role="tab" class="tab-btn" onclick="showTab('MLU',this)">Marcos Luciano</button>
+  <button type="button" role="tab" class="tab-btn" onclick="showTab('JBR',this)">Jane Broder</button>
+  <button type="button" role="tab" class="tab-btn" onclick="showTab('GE',this)">Gestão Emp.</button>
+  <button type="button" role="tab" class="tab-btn" onclick="showTab('DVT',this)">Acomp. DVT</button>
+  <button type="button" role="tab" class="tab-btn" onclick="showTab('NN',this)">Acomp. NN</button>
+  <button type="button" role="tab" class="tab-btn" onclick="showTab('CTR',this)">Contratos &amp; Med.</button>
 </div>
 
 <!-- CUSTOM TOOLTIP -->
@@ -1211,17 +1211,8 @@ async function loadFromSheets(forceRefresh){
       errors.push(`${SHEETS_TABS[key]}: ${e.message}`);
       newD[key] = {name: EMP_NAMES[key], rows: [], pranchas: []};
     }
-    // Fetch PR tab for this empreendimento (if any)
-    if(PR_TABS[key]){
-      try {
-        const prGviz = await fetchSheet(PR_TABS[key]);
-        newD[key].pranchas = parsePRSheet(prGviz);
-        console.log(`[${PR_TABS[key]}] ${newD[key].pranchas.length} pranchas carregadas`);
-      } catch(e){
-        console.warn(`Aba ${PR_TABS[key]} não encontrada ou vazia:`, e.message);
-        newD[key].pranchas = [];
-      }
-    }
+    // Abas _PR foram removidas do UI — não precisamos mais carregá-las
+    newD[key].pranchas = [];
   }
 
   try {
@@ -1974,94 +1965,10 @@ function togglePasta(gid){
   if(g) g.classList.toggle('collapsed');
 }
 
-// ── TOGGLE ROW DETAIL ──
-function toggleDetail(key,i){
-  const det=document.getElementById(`detail-${key}-${i}`);
-  if(!det)return;
-  det.classList.toggle('open');
-  if(det.classList.contains('open')){
-    renderPranchasForRow(key, i);
-  }
-}
-
-// Normaliza string para comparação tolerante (sem acento, caixa baixa, sem pontuação)
-function _normPr(s){
-  return (s||"").toString().toLowerCase()
-    .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
-    .replace(/[^a-z0-9]+/g," ").trim();
-}
-
-// Extrai "base" da pasta: "EDIFICAÇÕES: CLUBE HOUSE" → "clube house"
-function _pastaBase(s){
-  const t = (s||"").toString();
-  const idx = t.indexOf(":");
-  const tail = (idx >= 0) ? t.substring(idx+1) : t;
-  return _normPr(tail);
-}
-
-// Renderiza lista de pranchas filtradas para a linha (key, índice)
-function renderPranchasForRow(key, i){
-  const body = document.getElementById(`pr-body-${key}-${i}`);
-  const cntEl = document.getElementById(`pr-count-${key}-${i}`);
-  if(!body) return;
-
-  const emp = D[key];
-  const row = emp?.rows?.[i];
-  if(!row){
-    body.innerHTML = `<div class="pr-empty">Dados indisponíveis</div>`;
-    if(cntEl) cntEl.textContent = "0";
-    return;
-  }
-  const pranchas = emp.pranchas || [];
-  if(!pranchas.length){
-    body.innerHTML = `<div class="pr-empty">Nenhuma prancha cadastrada para este empreendimento</div>`;
-    if(cntEl) cntEl.textContent = "0";
-    return;
-  }
-
-  const projAlvo  = _normPr(row.projeto);
-  const pastaAlvo = _pastaBase(row.pasta);
-
-  // Filtro: mesmo projeto E mesma edificação/pasta
-  const matches = pranchas.filter(p => {
-    const projMatch = _normPr(p.projeto) === projAlvo;
-    if(!projMatch) return false;
-    if(!pastaAlvo || !p.edif) return true;
-    return _normPr(p.edif) === pastaAlvo;
-  });
-
-  if(cntEl) cntEl.textContent = String(matches.length);
-
-  if(!matches.length){
-    body.innerHTML = `<div class="pr-empty">Nenhuma prancha encontrada para <b>${row.projeto||'-'}</b>${row.pasta?` em <b>${row.pasta}</b>`:''}</div>`;
-    return;
-  }
-
-  const stPill = (st)=>{
-    const u = (st||"").toString().toUpperCase();
-    let bg = "#eee", fg = "#555";
-    if(u.includes("CONCLU"))          { bg = "#dff5e8"; fg = "#1a7a3f"; }
-    else if(u.includes("ANDAM"))      { bg = "#fff3cc"; fg = "#8a6a00"; }
-    else if(u.includes("NAO") || u.includes("NÃO")) { bg = "#fde3e3"; fg = "#a03030"; }
-    return `<span class="pr-st" style="background:${bg};color:${fg}">${st||'-'}</span>`;
-  };
-
-  let html = `<table class="pr-tbl">
-    <thead><tr>
-      <th style="width:50%">Prancha</th>
-      <th>Status</th>
-      <th style="width:110px">Data</th>
-    </tr></thead><tbody>`;
-  matches.forEach(p=>{
-    html += `<tr>
-      <td>${p.prancha||'-'}</td>
-      <td>${stPill(p.status)}</td>
-      <td class="pr-date">${p.data||'-'}</td>
-    </tr>`;
-  });
-  html += `</tbody></table>`;
-  body.innerHTML = html;
-}
+// ── TOGGLE ROW DETAIL (V2 — simples, sem pranchas) ──
+// Mantido para compatibilidade com handlers V1 que ainda possam chamá-lo
+// (a V2 do buildEmp não emite mais detail rows clicáveis)
+// toggleDetail já está definida acima; esta é um no-op para V2.
 
 // ── FILTERS ──
 function applyFV2(key, statusOverride){
@@ -3222,6 +3129,33 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 
   // Load data from Google Sheets and render everything
   await reloadAllFromSheets(false);
+});
+
+// ── MELHORIAS UX GLOBAIS ──
+// ESC fecha modal de empreendimento
+document.addEventListener('keydown', (e)=>{
+  if(e.key === 'Escape'){
+    const m = document.getElementById('empModal');
+    if(m && m.classList.contains('show')){
+      if(typeof closeEmpModal === 'function') closeEmpModal();
+    }
+  }
+  // Ctrl/Cmd+R intercepta apenas se o usuário estiver autenticado e o loader não estiver ativo
+  if((e.ctrlKey || e.metaKey) && e.key === 'r' && !e.shiftKey){
+    const locked = document.body.classList.contains('locked');
+    if(!locked){
+      e.preventDefault();
+      if(typeof reloadAllFromSheets === 'function') reloadAllFromSheets(true);
+    }
+  }
+});
+
+// Log helper: mostra estado atual no console para debug rápido
+window.__convDebug = ()=>({
+  empreendimentos: Object.keys(D).map(k=>({key:k, linhas:D[k]?.rows?.length||0})),
+  contratos: (typeof CONTRATOS !== 'undefined' ? CONTRATOS.length : 0),
+  nn: (typeof NN_DATA !== 'undefined' ? NN_DATA.length : 0),
+  cache: localStorage.getItem(CACHE_KEY) ? 'presente' : 'ausente'
 });
 </script>
 </body>
