@@ -1097,6 +1097,10 @@ async function reloadAllFromSheets(forceRefresh){
   } catch(e){ console.error("Erro ao aplicar dados:", e); }
 
   // Render each section in isolation so one bad chart doesn't break others
+  // Capture which tab is currently active BEFORE re-rendering destroys state
+  const prevActive = document.querySelector('.page.active');
+  const prevActiveId = prevActive ? prevActive.id : 'page-dash';
+
   const safeRun = (label, fn)=>{ try { fn(); } catch(e){ console.error(`Erro em ${label}:`, e); } };
   safeRun("buildDash", buildDash);
   safeRun("buildNN", buildNN);
@@ -1107,11 +1111,16 @@ async function reloadAllFromSheets(forceRefresh){
   safeRun("buildNNPage", buildNNPage);
   safeRun("setupTooltips", setupTooltips);
 
+  // Restore active state on the previously visible page (re-rendering wiped it)
   requestAnimationFrame(()=>{
-    const dash = document.getElementById("page-dash");
-    if(dash){
-      dash.classList.add("visible");
-      try { triggerAnims(dash); } catch(e){}
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active','visible'));
+    const target = document.getElementById(prevActiveId) || document.getElementById('page-dash');
+    if(target){
+      target.classList.add('active');
+      requestAnimationFrame(()=>{
+        target.classList.add('visible');
+        try { triggerAnims(target); } catch(e){}
+      });
     }
   });
 
