@@ -556,6 +556,22 @@ html,body{max-width:100vw;overflow-x:hidden}
 }
 
 /* ─── MOBILE: abaixo de 768px ─── */
+/* ── Contratos: cards mobile (escondidos no desktop por padrão) ── */
+.ctr-mobile-only{display:none}
+.ctr-cards-list{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+.ctr-card{background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:10px;padding:12px 13px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:6px}
+.ctr-card-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ctr-card-cod{font-family:monospace;font-size:11px;font-weight:700;color:#222;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ctr-card-tipo{padding:2px 7px;border-radius:10px;font-size:9px;font-weight:700;letter-spacing:.5px}
+.ctr-card-pct{padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700}
+.ctr-card-emp{font-size:12px;font-weight:700;color:#111;line-height:1.25}
+.ctr-card-forn{font-size:11px;font-weight:600;color:#333;line-height:1.25}
+.ctr-card-desc{font-size:10.5px;color:#666;line-height:1.3}
+.ctr-card-vals{display:flex;justify-content:space-between;gap:8px;padding-top:8px;border-top:1px solid #eee;margin-top:2px}
+.ctr-card-vals>div{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.ctr-card-l{font-size:8.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:#999}
+.ctr-card-v{font-family:monospace;font-size:11px;font-weight:600;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
 @media (max-width: 768px){
   html,body{width:100%;max-width:100vw;overflow-x:hidden}
   body{font-size:12px}
@@ -595,6 +611,10 @@ html,body{max-width:100vw;overflow-x:hidden}
      Disciplina e Status. Última Validade e Observação ficam ocultas. */
   .dvt-dash-table .dvt-c-val,
   .dvt-dash-table .dvt-c-obs{display:none !important}
+
+  /* Tabela de Contratos vira lista de cards no mobile */
+  .ctr-desktop-only{display:none !important}
+  .ctr-mobile-only{display:block !important}
 
   /* Header do site respeitando safe-area (notch / barra Safari) */
   header{
@@ -2735,7 +2755,7 @@ function buildContracts(){
     <button class="fb" onclick="document.getElementById('ctr-femp').value='ALL';document.getElementById('ctr-ftipo').value='ALL';document.getElementById('ctr-fdesc').value='';filterContratos()">&#8635; Limpar</button>
   </div>`;
 
-  let tableHtml=`<div class="tw reveal"><table id="ctr-table">
+  let tableHtml=`<div class="tw reveal ctr-desktop-only"><table id="ctr-table">
     <thead><tr>
       <th>Cód. Contrato</th><th>Tipo</th><th>Empreendimento</th>
       <th>Contratado</th><th>Descrição</th>
@@ -2760,6 +2780,33 @@ function buildContracts(){
   });
   tableHtml+='</tbody></table></div>';
 
+  // ── Cards versão mobile (espelho da tabela acima, com layout estilo
+  //    "Resumo por Empreendimento"). filterContratos() filtra ambos. ──
+  let cardsListHtml=`<div class="ctr-cards-list ctr-mobile-only" id="ctr-cards-list">`;
+  CONTRATOS.forEach((r,i)=>{
+    const pct=Math.round(r.pct*100);
+    const col=pct>=100?'#1a8a4a':pct>=50?'#8a6a00':'#555';
+    const tipoCol=r.tipo==='EDIFICAÇÕES'?'#1a8a4a':'#8a6a00';
+    const tipoBg=r.tipo==='EDIFICAÇÕES'?'rgba(46,184,110,.1)':'rgba(184,144,10,.1)';
+    const pctBg=pct>=80?'rgba(46,184,110,.12)':pct>=50?'rgba(184,144,10,.12)':'rgba(150,150,150,.1)';
+    cardsListHtml+=`<div class="ctr-card" data-emp="${r.empreendimento}" data-tipo="${r.tipo}" data-desc="${r.descricao}" data-forn="${r.contratado}" data-cod="${r.cod}">
+      <div class="ctr-card-top">
+        <span class="ctr-card-cod">${r.cod}</span>
+        <span class="ctr-card-tipo" style="background:${tipoBg};color:${tipoCol}">${r.tipo.slice(0,4)}</span>
+        <span class="ctr-card-pct" style="background:${pctBg};color:${col}">${pct}%</span>
+      </div>
+      <div class="ctr-card-emp">${r.empreendimento}</div>
+      <div class="ctr-card-forn">${r.contratado}</div>
+      <div class="ctr-card-desc">${r.descricao}</div>
+      <div class="ctr-card-vals">
+        <div><span class="ctr-card-l">Total</span><span class="ctr-card-v">${fmtBRL(r.valor_total)}</span></div>
+        <div><span class="ctr-card-l">Pago</span><span class="ctr-card-v" style="color:#1a8a4a">${fmtBRL(r.pago)}</span></div>
+        <div><span class="ctr-card-l">Saldo</span><span class="ctr-card-v" style="color:#888">${fmtBRL(Math.max(0,r.saldo))}</span></div>
+      </div>
+    </div>`;
+  });
+  cardsListHtml+='</div>';
+
   document.getElementById('page-CTR').innerHTML=`
     <div class="emp-hdr reveal" style="border-color:var(--green)">
       <div class="emp-nm">Contratos &amp; Medições</div>
@@ -2776,7 +2823,8 @@ function buildContracts(){
     ${fornHtml}
     <div class="sec">Tabela de Contratos</div>
     ${filterHtml}
-    ${tableHtml}`;
+    ${tableHtml}
+    ${cardsListHtml}`;
 
   setTimeout(()=>{
     document.querySelectorAll('#page-CTR .reveal').forEach((el,i)=>{
@@ -2790,12 +2838,18 @@ function filterContratos(){
   const tipo=document.getElementById('ctr-ftipo').value;
   const descVal=(document.getElementById('ctr-fdesc')||{}).value||'';
   const q=descVal.toLowerCase().trim();
-  document.querySelectorAll('#ctr-tbody tr').forEach(tr=>{
-    const okEmp=(emp==='ALL'||tr.dataset.emp===emp);
-    const okTipo=(tipo==='ALL'||tr.dataset.tipo===tipo);
-    const haystack=((tr.dataset.desc||'')+' '+(tr.dataset.forn||'')+' '+(tr.dataset.cod||'')).toLowerCase();
+  const matches=el=>{
+    const okEmp=(emp==='ALL'||el.dataset.emp===emp);
+    const okTipo=(tipo==='ALL'||el.dataset.tipo===tipo);
+    const haystack=((el.dataset.desc||'')+' '+(el.dataset.forn||'')+' '+(el.dataset.cod||'')).toLowerCase();
     const okSearch=!q||haystack.includes(q);
-    tr.style.display=(okEmp&&okTipo&&okSearch)?'':'none';
+    return okEmp&&okTipo&&okSearch;
+  };
+  document.querySelectorAll('#ctr-tbody tr').forEach(tr=>{
+    tr.style.display=matches(tr)?'':'none';
+  });
+  document.querySelectorAll('#ctr-cards-list .ctr-card').forEach(c=>{
+    c.style.display=matches(c)?'':'none';
   });
 }
 
