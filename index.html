@@ -175,7 +175,68 @@ td:last-child{border-right:none}
 .custom-tooltip{position:fixed;background:rgba(13,13,13,.92);color:#fff;padding:10px 14px;border-radius:8px;font-size:12px;pointer-events:none;z-index:9999;backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.1);box-shadow:0 4px 20px rgba(0,0,0,.3);max-width:260px;line-height:1.5;opacity:0;transition:opacity .15s var(--ease);transform:translateY(4px);transition:opacity .15s,transform .15s}
 .custom-tooltip.show{opacity:1;transform:translateY(0)}
 
-/* ─── FOOTER ─── */
+/* ─── PESQUISA GLOBAL ─── */
+.global-search-wrap{position:relative;display:flex;align-items:center}
+#global-search{
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);
+  color:#fff;font-family:'DM Sans',sans-serif;font-size:11px;
+  padding:5px 10px 5px 28px;border-radius:16px;width:0;opacity:0;
+  transition:width .3s var(--ease),opacity .3s var(--ease),background .15s;
+  outline:none;
+}
+#global-search.open{width:180px;opacity:1}
+#global-search:focus{background:rgba(255,255,255,.14);border-color:#2eb86e}
+#global-search::placeholder{color:#666}
+.gs-icon{position:absolute;left:8px;color:#888;pointer-events:none;transition:color .15s;z-index:1}
+#search-toggle-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);
+  color:#999;width:30px;height:30px;border-radius:50%;cursor:pointer;display:flex;
+  align-items:center;justify-content:center;transition:all .15s var(--ease);flex-shrink:0}
+#search-toggle-btn:hover{background:rgba(46,184,110,.2);border-color:#2eb86e;color:#2eb86e}
+/* Search results dropdown */
+#search-results{
+  position:fixed;top:98px;right:28px;width:340px;max-height:420px;overflow-y:auto;
+  background:#fff;border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.2),0 0 0 1px rgba(0,0,0,.08);
+  z-index:500;display:none;
+}
+#search-results.open{display:block}
+.sr-header{padding:10px 14px 6px;font-size:9px;font-weight:700;letter-spacing:1.5px;
+  text-transform:uppercase;color:var(--gray-400);border-bottom:1px solid var(--gray-100)}
+.sr-item{padding:9px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;
+  border-bottom:1px solid var(--gray-100);transition:background .1s}
+.sr-item:last-child{border-bottom:none}
+.sr-item:hover{background:#f0f9f5}
+.sr-emp{font-size:9px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;
+  color:var(--gray-400);flex-shrink:0;min-width:60px}
+.sr-title{font-size:12px;font-weight:600;color:#111;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sr-mark{background:rgba(46,184,110,.18);color:#1a8a4a;border-radius:3px;padding:0 2px}
+.sr-empty{padding:20px 14px;text-align:center;color:var(--gray-400);font-size:12px}
+
+/* ─── BOTTOM NAV BAR (mobile only) ─── */
+#bottom-nav{display:none}
+
+/* ─── PULL-TO-REFRESH ─── */
+#ptr-indicator{
+  position:fixed;top:-60px;left:50%;transform:translateX(-50%);
+  background:#fff;border-radius:50%;width:44px;height:44px;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 16px rgba(0,0,0,.18);z-index:9998;
+  transition:top .3s var(--ease);pointer-events:none;
+}
+#ptr-indicator.visible{top:70px}
+#ptr-indicator svg{transition:transform .3s var(--ease)}
+
+/* ─── CARD VIEW (mobile) ─── */
+.row-card{display:none;background:#fff;border-radius:10px;margin-bottom:8px;
+  box-shadow:var(--shadow);border:1px solid rgba(0,0,0,.07);overflow:hidden;
+  cursor:pointer;transition:transform .12s var(--ease),box-shadow .12s var(--ease)}
+.row-card:active{transform:scale(.98)}
+.row-card-head{background:#1c1c1c;padding:10px 14px;display:flex;align-items:center;justify-content:space-between}
+.row-card-title{font-size:12px;font-weight:700;color:#fff;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row-card-body{padding:12px 14px;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.row-card-field{display:flex;flex-direction:column;gap:2px}
+.row-card-lbl{font-size:8px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gray-400)}
+.row-card-val{font-size:11px;color:#111;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
 .footer{background:var(--black);color:#444;text-align:center;font-size:11px;letter-spacing:1px;padding:12px;position:fixed;bottom:0;left:0;right:0;z-index:100;border-top:1px solid #222}
 .pb{padding-bottom:44px}
 
@@ -341,22 +402,108 @@ td:last-child{border-right:none}
 /* Merged projeto cell styling */
 .merged-proj{background:#f8faf6 !important;border-right:2px solid #2eb86e !important;font-weight:700 !important;vertical-align:middle !important;text-align:left !important}
 
-/* ─── GOOGLE SHEETS LOADER OVERLAY ─── */
-#gs-loader{position:fixed;inset:0;background:rgba(13,13,13,.78);backdrop-filter:blur(4px);z-index:9999;display:flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif}
-.gs-loader-box{background:#fff;border-radius:14px;padding:28px 36px;text-align:center;box-shadow:0 12px 48px rgba(0,0,0,.4);min-width:280px;max-width:480px}
-.gs-spinner{width:42px;height:42px;border:3.5px solid #efefef;border-top-color:#2eb86e;border-radius:50%;margin:0 auto 14px;animation:gs-spin .85s linear infinite}
+/* ─── SKELETON LOADING SYSTEM ─── */
 @keyframes gs-spin{to{transform:rotate(360deg)}}
+@keyframes skShimmer{0%{background-position:-600px 0}100%{background-position:600px 0}}
+@keyframes skFadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes skPulse{0%,100%{opacity:1}50%{opacity:.45}}
+
+/* Overlay fino — apenas escurece levemente, sem bloquear tudo */
+#gs-loader{
+  position:fixed;inset:0;z-index:9999;
+  display:flex;flex-direction:column;
+  background:rgba(245,245,243,.92);
+  backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);
+  font-family:'DM Sans',sans-serif;
+  opacity:0;transition:opacity .25s ease;pointer-events:none;
+}
+#gs-loader.sk-visible{opacity:1;pointer-events:auto}
+
+/* Barra de progresso no topo */
+.sk-progress-bar{
+  position:absolute;top:0;left:0;right:0;height:3px;
+  background:rgba(46,184,110,.15);overflow:hidden;
+}
+.sk-progress-fill{
+  height:100%;width:0%;
+  background:linear-gradient(90deg,#2eb86e,#1f9a59);
+  border-radius:0 2px 2px 0;
+  transition:width .4s cubic-bezier(.4,0,.2,1);
+  box-shadow:0 0 8px rgba(46,184,110,.5);
+}
+
+/* Container do skeleton — replica o layout real */
+.sk-wrap{
+  width:100%;max-width:100%;padding:20px 28px;
+  overflow:hidden;flex:1;
+  animation:skFadeIn .3s ease;
+}
+
+/* Elemento base shimmer */
+.sk-b{
+  background:#e8e8e5;
+  background-image:linear-gradient(90deg,#e8e8e5 0px,#f0f0ed 120px,#e8e8e5 240px);
+  background-size:600px 100%;
+  background-position:-600px 0;
+  animation:skShimmer 1.4s ease-in-out infinite;
+  border-radius:6px;
+}
+
+/* KPI grid skeleton */
+.sk-kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:12px;margin-bottom:22px}
+.sk-kpi{height:88px;border-radius:10px}
+
+/* Section label */
+.sk-sec{height:12px;width:180px;margin-bottom:16px;border-radius:4px}
+
+/* Chart cards */
+.sk-chart-row{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:22px}
+.sk-chart{height:300px;border-radius:10px}
+
+/* Gauge row */
+.sk-gauge-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:14px;margin-bottom:22px}
+.sk-gauge{height:160px;border-radius:10px}
+
+/* DVT card */
+.sk-dvt{height:100px;border-radius:10px;margin-bottom:20px}
+
+/* Status label (canto inferior) */
+.sk-status-bar{
+  position:absolute;bottom:48px;left:50%;transform:translateX(-50%);
+  background:#fff;border-radius:24px;padding:8px 20px;
+  box-shadow:0 4px 20px rgba(0,0,0,.12),0 0 0 1px rgba(0,0,0,.07);
+  display:flex;align-items:center;gap:10px;white-space:nowrap;
+  animation:skFadeIn .4s ease .1s both;
+}
+.sk-status-dot{
+  width:8px;height:8px;border-radius:50%;background:#2eb86e;
+  animation:skPulse 1.2s ease infinite;flex-shrink:0;
+}
+.sk-status-txt{font-size:12px;font-weight:600;color:#555;letter-spacing:.3px}
+.sk-status-sub{font-size:10px;color:#aaa;font-weight:500}
+
+/* Erro */
+.sk-err-box{
+  background:#fff;border-radius:14px;padding:28px 36px;
+  text-align:center;box-shadow:0 12px 48px rgba(0,0,0,.15);
+  max-width:440px;margin:auto;animation:skFadeIn .3s ease;
+}
+.gs-err-icon{font-size:38px;color:#d94f4f;margin-bottom:8px}
 .gs-msg{font-size:14px;font-weight:700;color:#111;letter-spacing:.3px;margin-bottom:4px}
 .gs-sub{font-size:11px;color:#777;font-weight:500}
-.gs-err-icon{font-size:38px;color:#d94f4f;margin-bottom:8px}
 .gs-retry-btn{margin-top:16px;background:#2eb86e;color:#fff;border:none;padding:8px 18px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:background .15s}
 .gs-retry-btn:hover{background:#1f9a59}
+
+/* Refresh button spin */
 /* Refresh button in header */
 .hdr-refresh{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s var(--ease);padding:0}
 .hdr-refresh:hover{background:rgba(46,184,110,.25);border-color:#2eb86e;color:#2eb86e}
 .hdr-refresh:disabled{opacity:.5;cursor:not-allowed}
 .hdr-refresh.spinning svg{animation:gs-spin 1s linear infinite}
-.hdr-update{color:#888;font-size:10px;font-weight:600;letter-spacing:.5px;font-family:'DM Mono',monospace}
+.hdr-update{color:#888;font-size:10px;font-weight:600;letter-spacing:.5px;font-family:'DM Mono',monospace;display:flex;align-items:center;gap:5px;cursor:default}
+.hdr-stale-dot{width:6px;height:6px;border-radius:50%;background:#2eb86e;flex-shrink:0;transition:background .3s}
+.hdr-stale-dot.stale{background:#b8900a;animation:dotPulse 2s ease-in-out infinite}
+@keyframes dotPulse{0%,100%{opacity:1}50%{opacity:.4}}
 /* ─── LOGIN MODAL ─── */
 #login-overlay{position:fixed;inset:0;background:rgba(8,8,10,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);z-index:99999;display:flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;animation:loginFade .4s var(--ease)}
 @keyframes loginFade{from{opacity:0}to{opacity:1}}
@@ -584,6 +731,61 @@ html,body{max-width:100vw;overflow-x:hidden}
   /* Tooltip custom some no mobile */
   .custom-tooltip,.ctip{display:none!important}
 
+  /* Skeleton no mobile */
+  .sk-kpi-grid{grid-template-columns:repeat(2,1fr)!important;gap:8px!important}
+  .sk-chart-row{grid-template-columns:1fr!important}
+  .sk-chart{height:200px!important}
+  .sk-gauge-grid{grid-template-columns:repeat(2,1fr)!important;gap:8px!important}
+  .sk-gauge{height:120px!important}
+  .sk-wrap{padding:12px 10px}
+  .sk-status-bar{max-width:88vw;font-size:11px}
+
+  /* Search results no mobile */
+  #search-results{right:8px;left:8px;width:auto;top:100px}
+  #global-search.open{width:140px}
+
+  /* Bottom nav */
+  #bottom-nav{
+    display:flex;position:fixed;bottom:0;left:0;right:0;z-index:300;
+    background:var(--black);border-top:1px solid #2a2a2a;
+    padding:0 0 env(safe-area-inset-bottom,0px);
+    height:calc(52px + env(safe-area-inset-bottom,0px));
+    align-items:stretch;
+  }
+  .bnav-btn{
+    flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:3px;border:none;background:transparent;color:var(--gray-600);
+    font-family:'DM Sans',sans-serif;font-size:9px;font-weight:600;letter-spacing:.5px;
+    text-transform:uppercase;cursor:pointer;padding:6px 4px;
+    transition:color .15s var(--ease),background .15s var(--ease);
+    position:relative;
+  }
+  .bnav-btn:active{background:rgba(255,255,255,.05)}
+  .bnav-btn.active{color:var(--green)}
+  .bnav-btn.active::after{content:'';position:absolute;top:0;left:20%;right:20%;height:2px;background:var(--green);border-radius:0 0 2px 2px}
+  .bnav-btn svg{width:18px;height:18px;stroke:currentColor;stroke-width:2;fill:none;flex-shrink:0}
+  .bnav-more-menu{
+    display:none;position:fixed;bottom:calc(52px + env(safe-area-inset-bottom,0px));left:0;right:0;
+    background:var(--dark);border-top:1px solid #2a2a2a;padding:8px;z-index:299;
+    flex-wrap:wrap;gap:4px;
+  }
+  .bnav-more-menu.open{display:flex}
+  .bnav-more-item{flex:0 0 calc(50% - 2px);background:rgba(255,255,255,.05);border:none;
+    border-radius:8px;color:var(--gray-400);font-family:'DM Sans',sans-serif;font-size:10px;
+    font-weight:600;letter-spacing:.5px;text-transform:uppercase;padding:10px 8px;
+    cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .15s}
+  .bnav-more-item:active{background:rgba(255,255,255,.1)}
+  .bnav-more-item.active{color:var(--green);background:var(--green-dim)}
+
+  /* Footer moves up on mobile to not clash with bottom nav */
+  .footer{display:none}
+  .pb{padding-bottom:calc(52px + env(safe-area-inset-bottom,0px) + 12px)!important}
+
+  /* Card view active when body has .mobile-cards */
+  body.mobile-cards .tw table{display:none}
+  body.mobile-cards .row-card{display:block}
+  body.mobile-cards .tw{overflow:hidden;background:transparent;border:none}
+
   /* Footer estático, não sobreposto */
   footer,.foot{
     position:static!important;
@@ -609,22 +811,6 @@ html,body{max-width:100vw;overflow-x:hidden}
   .emp-stats{grid-template-columns:repeat(2,1fr)!important}
   .emp-stats .es-n{font-size:16px}
   .kpi-num,#page-dash .kpi-num{font-size:20px!important}
-}
-
-@media (max-width: 768px){
-  .tab-bar{display:none !important}
-  .topbar-search, #topbar-search, .search-wrap, [class*="search"]{display:none !important}
-  .wrap, .container, main, #page-dash, .page{padding-left:8px !important; padding-right:8px !important}
-  .emp-modal-side, .emp-modal-left, .emp-side{display:none !important}
-  .emp-modal-body, .emp-modal-main{width:100% !important; max-width:100% !important}
-  /* Ocultar % lateral em maturidade no mobile */
-  .mat-pct-side, .mat-row-pct, .bar-pct-right{display:none !important}
-  /* Ocultar cards específicos no mobile dashboard */
-  .kpi-concluidos, .kpi-saldo, [data-kpi="concluidos"], [data-kpi="saldo"]{display:none !important}
-  /* Ocultar valor pago lateral em top fornecedores */
-  .top-forn-pago, .forn-pago-side{display:none !important}
-  /* Ocultar tabela montante por fornecedor no mobile */
-  #ctr-montante-fornecedor, .ctr-montante-fornecedor{display:none !important}
 }
 </style>
 </head>
@@ -687,16 +873,23 @@ setTimeout(()=>{ const u=document.getElementById('login-user'); if(u && !u.disab
   </div>
   <div class="hdr-title">Acompanhamento de Projetos</div>
   <div class="hdr-right">
-    <span id="last-update" class="hdr-update" title="Última atualização"></span>
+    <span id="last-update" class="hdr-update" title="Última atualização"><span class="hdr-stale-dot" id="stale-dot"></span><span id="last-update-txt"></span></span>
     <button id="refresh-btn" class="hdr-refresh" onclick="reloadAllFromSheets(true)" title="Atualizar dados da planilha" aria-label="Atualizar dados da planilha" type="button">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
     </button>
   </div>
 </header>
 
+<!-- PESQUISA GLOBAL RESULTS -->
+<div id="search-results" style="display:none" onclick="event.stopPropagation()"></div>
+
+<!-- PULL-TO-REFRESH -->
+<div id="ptr-indicator">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2eb86e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" id="ptr-icon"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+</div>
+
 <div class="tab-bar" role="tablist" aria-label="Navegação principal">
   <button type="button" role="tab" class="tab-btn dtab active" onclick="showTab('dash',this)">Dashboard</button>
-  <button type="button" role="tab" class="tab-btn" onclick="showTab('CTR',this)">Contratos &amp; Med.</button>
   <button type="button" role="tab" class="tab-btn" onclick="showTab('RIV',this)">Riviera</button>
   <button type="button" role="tab" class="tab-btn" onclick="showTab('CTM',this)">Costamare</button>
   <button type="button" role="tab" class="tab-btn" onclick="showTab('EXT',this)">Exclusive Tianguá</button>
@@ -706,6 +899,7 @@ setTimeout(()=>{ const u=document.getElementById('login-user'); if(u && !u.disab
   <button type="button" role="tab" class="tab-btn" onclick="showTab('GE',this)">Gestão Emp.</button>
   <button type="button" role="tab" class="tab-btn" onclick="showTab('DVT',this)">Acomp. DVT</button>
   <button type="button" role="tab" class="tab-btn" onclick="showTab('NN',this)">Acomp. NN</button>
+  <button type="button" role="tab" class="tab-btn" onclick="showTab('CTR',this)">Contratos &amp; Med.</button>
 </div>
 
 <!-- CUSTOM TOOLTIP -->
@@ -771,6 +965,39 @@ setTimeout(()=>{ const u=document.getElementById('login-user'); if(u && !u.disab
 <!-- Empreendimento Modal -->
 <div class="emp-modal-overlay" id="empModal" onclick="if(event.target===this)closeEmpModal()">
   <div class="emp-modal" id="empModalInner"></div>
+</div>
+
+<!-- BOTTOM NAV (mobile) -->
+<nav id="bottom-nav" aria-label="Navegação principal mobile">
+  <button type="button" class="bnav-btn active" data-tab="dash" onclick="bnavGo('dash',this)">
+    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    Dashboard
+  </button>
+  <button type="button" class="bnav-btn" data-tab="RIV" onclick="bnavGo('RIV',this)">
+    <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    Riviera
+  </button>
+  <button type="button" class="bnav-btn" data-tab="CTM" onclick="bnavGo('CTM',this)">
+    <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    Costamare
+  </button>
+  <button type="button" class="bnav-btn" data-tab="CTR" onclick="bnavGo('CTR',this)">
+    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+    Contratos
+  </button>
+  <button type="button" class="bnav-btn" id="bnav-more-btn" onclick="toggleBnavMore()">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+    Mais
+  </button>
+</nav>
+<div class="bnav-more-menu" id="bnav-more-menu">
+  <button type="button" class="bnav-more-item" onclick="bnavGo('EXT',null);toggleBnavMore()">Exclusive Tianguá</button>
+  <button type="button" class="bnav-more-item" onclick="bnavGo('KEN',null);toggleBnavMore()">Kennedy</button>
+  <button type="button" class="bnav-more-item" onclick="bnavGo('MLU',null);toggleBnavMore()">Marcos Luciano</button>
+  <button type="button" class="bnav-more-item" onclick="bnavGo('JBR',null);toggleBnavMore()">Jane Broder</button>
+  <button type="button" class="bnav-more-item" onclick="bnavGo('GE',null);toggleBnavMore()">Gestão Emp.</button>
+  <button type="button" class="bnav-more-item" onclick="bnavGo('DVT',null);toggleBnavMore()">Acomp. DVT</button>
+  <button type="button" class="bnav-more-item" onclick="bnavGo('NN',null);toggleBnavMore()">Acomp. NN</button>
 </div>
 
 <div class="footer">CONVIVER URBANISMO — SISTEMA DE ACOMPANHAMENTO DE PROJETOS &nbsp;|&nbsp; <span id="fdate"></span></div>
@@ -1274,47 +1501,141 @@ async function loadFromSheets(forceRefresh){
   return {data:newD, contracts:newContracts, nn:newNN, fromCache:false, ts:Date.now(), errors:errors};
 }
 
-function showLoadingOverlay(msg){
+// ── SKELETON LOADING SYSTEM ──
+let _skProgressTimer = null;
+let _skCurrentProgress = 0;
+
+function _skBuildSkeleton(){
+  return `
+    <div class="sk-progress-bar"><div class="sk-progress-fill" id="sk-fill"></div></div>
+    <div class="sk-wrap">
+      <!-- Seção KPIs -->
+      <div class="sk-b sk-sec" style="margin-bottom:14px;width:200px"></div>
+      <div class="sk-kpi-grid">
+        ${Array(6).fill('<div class="sk-b sk-kpi"></div>').join('')}
+      </div>
+      <!-- Seção Gráficos -->
+      <div class="sk-b sk-sec" style="margin-bottom:14px;width:320px"></div>
+      <div class="sk-chart-row">
+        <div class="sk-b sk-chart"></div>
+        <div class="sk-b sk-chart"></div>
+      </div>
+      <!-- Seção Gauges / Empreendimentos -->
+      <div class="sk-b sk-sec" style="margin-bottom:14px;width:260px"></div>
+      <div class="sk-gauge-grid">
+        ${Array(5).fill('<div class="sk-b sk-gauge"></div>').join('')}
+      </div>
+      <!-- DVT card -->
+      <div class="sk-b sk-sec" style="margin-bottom:14px;width:220px"></div>
+      <div class="sk-b sk-dvt"></div>
+    </div>
+    <div class="sk-status-bar" id="sk-status-bar">
+      <div class="sk-status-dot"></div>
+      <div>
+        <div class="sk-status-txt" id="sk-status-txt">Carregando dados…</div>
+        <div class="sk-status-sub" id="sk-status-sub">Buscando Google Sheets</div>
+      </div>
+    </div>`;
+}
+
+function _skSetProgress(pct){
+  _skCurrentProgress = pct;
+  const fill = document.getElementById('sk-fill');
+  if(fill) fill.style.width = Math.min(100, pct) + '%';
+}
+
+function _skAnimateProgress(target, duration){
+  const start = _skCurrentProgress;
+  const diff = target - start;
+  const t0 = performance.now();
+  function step(now){
+    const elapsed = now - t0;
+    const ratio = Math.min(elapsed / duration, 1);
+    const ease = 1 - Math.pow(1 - ratio, 3);
+    _skSetProgress(start + diff * ease);
+    if(ratio < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+function showLoadingOverlay(msg, sub){
   let ov = document.getElementById("gs-loader");
   if(!ov){
     ov = document.createElement("div");
     ov.id = "gs-loader";
-    ov.innerHTML = `
-      <div class="gs-loader-box">
-        <div class="gs-spinner"></div>
-        <div class="gs-msg" id="gs-loader-msg"></div>
-        <div class="gs-sub">Buscando dados do Google Sheets…</div>
-      </div>`;
+    ov.innerHTML = _skBuildSkeleton();
     document.body.appendChild(ov);
   }
-  document.getElementById("gs-loader-msg").textContent = msg || "Carregando dados…";
-  ov.style.display = "flex";
+  // Reset to skeleton mode (in case it was in error mode)
+  if(ov.querySelector('.sk-wrap')){
+    const txt = document.getElementById('sk-status-txt');
+    const sub2 = document.getElementById('sk-status-sub');
+    if(txt) txt.textContent = msg || "Carregando dados…";
+    if(sub2) sub2.textContent = sub || "Buscando Google Sheets";
+  }
+  _skCurrentProgress = 0;
+  _skSetProgress(0);
+  ov.classList.add('sk-visible');
+  // Animate to 20% quickly — signals start
+  setTimeout(()=>_skAnimateProgress(20, 400), 50);
+  // Slowly crawl to ~75% while waiting for network
+  setTimeout(()=>_skAnimateProgress(75, 8000), 500);
 }
+
+function _skUpdateStatus(msg, sub){
+  const txt = document.getElementById('sk-status-txt');
+  const s = document.getElementById('sk-status-sub');
+  if(txt) txt.textContent = msg;
+  if(s && sub) s.textContent = sub;
+}
+
 function hideLoadingOverlay(){
   const ov = document.getElementById("gs-loader");
-  if(ov) ov.style.display = "none";
+  if(!ov) return;
+  // Complete the progress bar
+  _skAnimateProgress(100, 350);
+  setTimeout(()=>{
+    ov.classList.remove('sk-visible');
+    // Reset progress after fade-out
+    setTimeout(()=>_skSetProgress(0), 300);
+  }, 380);
 }
+
 function showLoadingError(err){
   let ov = document.getElementById("gs-loader");
   if(!ov){ showLoadingOverlay(""); ov = document.getElementById("gs-loader"); }
-  ov.querySelector(".gs-loader-box").innerHTML = `
-    <div class="gs-err-icon">⚠</div>
-    <div class="gs-msg">Erro ao carregar dados</div>
-    <div class="gs-sub" style="max-width:420px">${(err && err.message) || err || "Erro desconhecido"}</div>
-    <div class="gs-sub" style="margin-top:10px;font-size:10px">
-      Verifique se a planilha está compartilhada como<br>"<strong>Qualquer pessoa com o link — Leitor</strong>".
-    </div>
-    <button class="gs-retry-btn" onclick="window.location.reload()">Tentar novamente</button>`;
-  ov.style.display = "flex";
+  // Replace inner content with error box
+  ov.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:center;height:100%;padding:20px">
+      <div class="sk-err-box">
+        <div class="gs-err-icon">⚠</div>
+        <div class="gs-msg">Erro ao carregar dados</div>
+        <div class="gs-sub" style="max-width:420px">${(err && err.message) || err || "Erro desconhecido"}</div>
+        <div class="gs-sub" style="margin-top:10px;font-size:10px">
+          Verifique se a planilha está compartilhada como<br>"<strong>Qualquer pessoa com o link — Leitor</strong>".
+        </div>
+        <button class="gs-retry-btn" onclick="window.location.reload()">Tentar novamente</button>
+      </div>
+    </div>`;
+  ov.classList.add('sk-visible');
 }
 
 async function reloadAllFromSheets(forceRefresh){
   const btn = document.getElementById("refresh-btn");
   if(btn){ btn.disabled = true; btn.classList.add("spinning"); }
-  showLoadingOverlay(forceRefresh ? "Atualizando da planilha…" : "Carregando dados…");
+  showLoadingOverlay(
+    forceRefresh ? "Atualizando dados…" : "Carregando dados…",
+    forceRefresh ? "Buscando versão mais recente" : "Conectando ao Google Sheets"
+  );
   let result;
   try {
+    // Give the skeleton a moment to render before the heavy network fetch
+    await new Promise(r => setTimeout(r, 80));
+    _skUpdateStatus("Buscando planilhas…", "Aguardando resposta do servidor");
+    _skAnimateProgress(35, 600);
     result = await loadFromSheets(forceRefresh);
+    _skUpdateStatus("Processando dados…", "Organizando empreendimentos");
+    _skAnimateProgress(80, 350);
   } catch(err){
     console.error("Falha no carregamento:", err);
     showLoadingError(err);
@@ -1362,13 +1683,19 @@ async function reloadAllFromSheets(forceRefresh){
     }
   });
 
-  // Update last-update label
-  const lbl = document.getElementById("last-update");
+
+  // Update last-update label with stale indicator
+  const lbl = document.getElementById('last-update-txt');
+  const dot = document.getElementById('stale-dot');
   if(lbl){
     const d = new Date(result.ts);
-    const hh = String(d.getHours()).padStart(2,"0");
-    const mm = String(d.getMinutes()).padStart(2,"0");
-    lbl.textContent = (result.fromCache?"cache · ":"") + hh+":"+mm;
+    const hh = String(d.getHours()).padStart(2,'0');
+    const mm = String(d.getMinutes()).padStart(2,'0');
+    const ageMin = Math.round((Date.now()-result.ts)/60000);
+    lbl.textContent = (result.fromCache?'cache · ':'') + hh+':'+mm;
+    if(dot) dot.classList.toggle('stale', result.fromCache && ageMin>4);
+    const wrap = document.getElementById('last-update');
+    if(wrap) wrap.title = result.fromCache ? 'Cache de '+ageMin+'min atrás — clique ↻ para atualizar' : 'Atualizado agora';
   }
   hideLoadingOverlay();
   if(btn){ btn.disabled = false; btn.classList.remove("spinning"); }
@@ -3173,6 +3500,292 @@ window.__convDebug = ()=>({
   nn: (typeof NN_DATA !== 'undefined' ? NN_DATA.length : 0),
   cache: localStorage.getItem(CACHE_KEY) ? 'presente' : 'ausente'
 });
+
+// ══════════════════════════════════════════════════════════
+// ONDA 1 — PESQUISA GLOBAL CROSS-EMPREENDIMENTO
+// ══════════════════════════════════════════════════════════
+function toggleGlobalSearch(){
+  const inp = document.getElementById('global-search');
+  if(!inp) return;
+  inp.classList.toggle('open');
+  if(inp.classList.contains('open')) inp.focus();
+  else { inp.value=''; document.getElementById('search-results').classList.remove('open'); }
+}
+
+function escapeRE(s){ return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
+
+function runGlobalSearch(q){
+  const res = document.getElementById('search-results');
+  if(!res) return;
+  q = q.trim();
+  if(q.length < 2){ res.innerHTML=''; res.classList.remove('open'); return; }
+  res.classList.add('open');
+
+  const rx = new RegExp(escapeRE(q),'gi');
+  const hits = [];
+
+  // Search empreendimentos
+  const EMP_LABELS = {RIV:'Riviera',CTM:'Costamare',EXT:'Exclusive',KEN:'Kennedy',MLU:'Marcos L.',JBR:'Jane B.',GE:'Gestão'};
+  Object.keys(D).forEach(k=>{
+    const rows = D[k]?.rows || [];
+    rows.forEach(r=>{
+      const text = [r.disc,r.proj,r.pasta,r.obs,r.setor].filter(Boolean).join(' ');
+      if(rx.test(text)){
+        const match = r.disc||r.proj||'(sem título)';
+        hits.push({tab:k,label:EMP_LABELS[k]||k,title:match.substring(0,60),sub:r.pasta||r.setor||''});
+      }
+      rx.lastIndex=0;
+    });
+  });
+
+  // Search NN
+  if(typeof NN_DATA !== 'undefined'){
+    NN_DATA.forEach(r=>{
+      const text = [r.emp,r.mun,r.uf,r.obs].filter(Boolean).join(' ');
+      if(rx.test(text)) hits.push({tab:'NN',label:'NN',title:r.emp,sub:r.mun+'/'+r.uf});
+      rx.lastIndex=0;
+    });
+  }
+
+  // Search Contratos
+  if(typeof CONTRATOS !== 'undefined'){
+    CONTRATOS.forEach(c=>{
+      const text = [c.emp,c.forn,c.obj,c.desc].filter(Boolean).join(' ');
+      if(rx.test(text)) hits.push({tab:'CTR',label:'Contr.',title:(c.forn||c.obj||'').substring(0,55),sub:c.emp||''});
+      rx.lastIndex=0;
+    });
+  }
+
+  if(hits.length === 0){
+    res.innerHTML = `<div class="sr-empty">Nenhum resultado para "<strong>${q}</strong>"</div>`;
+    return;
+  }
+
+  const top = hits.slice(0,25);
+  const hl = s => (s||'').replace(new RegExp(escapeRE(q),'gi'), m=>`<span class="sr-mark">${m}</span>`);
+  res.innerHTML = `<div class="sr-header">${top.length} resultado${top.length!==1?'s':''}</div>` +
+    top.map(h=>`<div class="sr-item" onclick="showTab('${h.tab}',null);document.getElementById('search-results').classList.remove('open');document.getElementById('global-search').value=''">
+      <span class="sr-emp">${h.label}</span>
+      <span class="sr-title" title="${h.title}">${hl(h.title)}<br><small style="color:var(--gray-600);font-weight:400">${h.sub}</small></span>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════════════════════
+// ONDA 2 — BOTTOM NAV BAR (mobile)
+// ══════════════════════════════════════════════════════════
+function bnavGo(tab, btn){
+  const tabBtn = document.querySelector(`.tab-btn[onclick*="'${tab}'"]`);
+  if(tabBtn) tabBtn.click();
+  // Update bottom nav active state
+  document.querySelectorAll('.bnav-btn').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  else {
+    // Try to find matching bnav button
+    const b = document.querySelector(`.bnav-btn[data-tab="${tab}"]`);
+    if(b){ document.querySelectorAll('.bnav-btn').forEach(x=>x.classList.remove('active')); b.classList.add('active'); }
+    else { document.getElementById('bnav-more-btn')?.classList.add('active'); }
+  }
+  document.getElementById('bnav-more-menu')?.classList.remove('open');
+}
+
+function toggleBnavMore(){
+  const m = document.getElementById('bnav-more-menu');
+  if(m) m.classList.toggle('open');
+}
+
+// Close more menu on outside click
+document.addEventListener('click', e=>{
+  const menu = document.getElementById('bnav-more-menu');
+  const btn = document.getElementById('bnav-more-btn');
+  if(menu && !menu.contains(e.target) && btn && !btn.contains(e.target)){
+    menu.classList.remove('open');
+  }
+  // Close search
+  const sr = document.getElementById('search-results');
+  const gs = document.getElementById('global-search');
+  if(sr && gs && !sr.contains(e.target) && !gs.contains(e.target)){
+    sr.classList.remove('open');
+  }
+});
+
+// Sync bottom nav when tab changes via top tab-bar
+(function(){
+  const origShow = window.showTab;
+  if(typeof origShow === 'function'){
+    window.showTab = function(id, btn){
+      origShow(id, btn);
+      const nb = document.querySelector(`.bnav-btn[data-tab="${id}"]`);
+      document.querySelectorAll('.bnav-btn').forEach(b=>b.classList.remove('active'));
+      if(nb) nb.classList.add('active');
+      else document.getElementById('bnav-more-btn')?.classList.add('active');
+    };
+  }
+})();
+
+// ══════════════════════════════════════════════════════════
+// ONDA 2 — PULL-TO-REFRESH (mobile)
+// ══════════════════════════════════════════════════════════
+(function(){
+  let startY=0, pulling=false, triggered=false;
+  const THRESHOLD = 80;
+  const ind = document.getElementById('ptr-indicator');
+  const icon = document.getElementById('ptr-icon');
+
+  function isMobile(){ return window.innerWidth <= 768; }
+
+  document.addEventListener('touchstart', e=>{
+    if(!isMobile()) return;
+    if(window.scrollY === 0) { startY = e.touches[0].pageY; pulling = true; triggered = false; }
+  }, {passive:true});
+
+  document.addEventListener('touchmove', e=>{
+    if(!pulling || !isMobile() || !ind) return;
+    const dist = e.touches[0].pageY - startY;
+    if(dist > 0 && window.scrollY === 0){
+      const prog = Math.min(dist/THRESHOLD, 1);
+      ind.classList.toggle('visible', dist > 30);
+      if(icon) icon.style.transform = `rotate(${prog*360}deg)`;
+      if(dist > THRESHOLD && !triggered) triggered = true;
+    }
+  }, {passive:true});
+
+  document.addEventListener('touchend', ()=>{
+    if(!pulling || !isMobile()) return;
+    pulling = false;
+    if(ind){ ind.classList.remove('visible'); if(icon) icon.style.transform=''; }
+    if(triggered){ triggered=false; reloadAllFromSheets(true); }
+  });
+})();
+
+// ══════════════════════════════════════════════════════════
+// ONDA 2 — CARD VIEW NAS TABELAS (mobile)
+// ══════════════════════════════════════════════════════════
+// Gera cards a partir das tabelas já renderizadas, injetando-os
+// logo após o .tw dentro de cada .pasta-body ou container de tabela.
+function buildMobileCards(){
+  if(window.innerWidth > 768) return;
+  document.querySelectorAll('.tw').forEach(tw=>{
+    const tbl = tw.querySelector('table');
+    if(!tbl || tw.dataset.cardsBuilt) return;
+    tw.dataset.cardsBuilt = '1';
+
+    const ths = [...tbl.querySelectorAll('thead th')].map(th=>th.textContent.trim());
+    const rows = [...tbl.querySelectorAll('tbody tr[data-i]')];
+    if(rows.length === 0) return;
+
+    const container = document.createElement('div');
+    container.className = 'mobile-card-container';
+
+    rows.forEach(tr=>{
+      const tds = [...tr.querySelectorAll('td')];
+      if(tds.length === 0) return;
+      const title = tds[0]?.textContent.trim() || '—';
+      const statusTd = tds.find(td=>td.querySelector('.pill'));
+      const statusHtml = statusTd ? statusTd.innerHTML : '';
+
+      const card = document.createElement('div');
+      card.className = 'row-card';
+      // Copy click behavior from original row
+      if(tr.onclick) card.onclick = tr.onclick;
+      else if(tr.dataset.i) card.onclick = ()=>tr.click();
+
+      let fieldsHtml = '';
+      tds.forEach((td,idx)=>{
+        if(idx === 0) return; // já no header
+        const lbl = ths[idx] || '';
+        if(!lbl) return;
+        const val = td.textContent.trim() || '—';
+        if(lbl === 'Observacao' || val === '—') return; // skip empty/obs
+        fieldsHtml += `<div class="row-card-field"><span class="row-card-lbl">${lbl}</span><span class="row-card-val">${val}</span></div>`;
+      });
+
+      card.innerHTML = `
+        <div class="row-card-head">
+          <span class="row-card-title">${title}</span>
+          ${statusHtml ? `<span style="flex-shrink:0;max-width:140px">${statusHtml}</span>` : ''}
+        </div>
+        ${fieldsHtml ? `<div class="row-card-body">${fieldsHtml}</div>` : ''}`;
+      container.appendChild(card);
+    });
+
+    tw.insertAdjacentElement('afterend', container);
+  });
+}
+
+// Toggle entre card view e tabela (mobile)
+let _mobileCardsActive = false;
+function toggleMobileCards(force){
+  const isMob = window.innerWidth <= 768;
+  if(!isMob) return;
+  _mobileCardsActive = force !== undefined ? force : !_mobileCardsActive;
+  document.body.classList.toggle('mobile-cards', _mobileCardsActive);
+  document.querySelectorAll('.mobile-card-container').forEach(c=>{
+    c.style.display = _mobileCardsActive ? 'block' : 'none';
+  });
+}
+
+// Rebuild cards whenever a page is shown (tab switch)
+const _origShowTab = window.showTab;
+window.showTab = function(id, btn){
+  _origShowTab(id, btn);
+  // Give DOM time to render, then build cards
+  setTimeout(()=>{
+    buildMobileCards();
+    if(_mobileCardsActive) toggleMobileCards(true);
+  }, 80);
+};
+
+// Auto-enable cards on mobile after first data load
+document.addEventListener('DOMContentLoaded', ()=>{
+  if(window.innerWidth <= 768){
+    setTimeout(()=>{ buildMobileCards(); }, 1200);
+  }
+});
+
+window.addEventListener('resize', ()=>{
+  if(window.innerWidth > 768){
+    document.body.classList.remove('mobile-cards');
+    _mobileCardsActive = false;
+  }
+});
+(function(){
+  function adaptSearch(){
+    const isMob = window.innerWidth <= 768;
+    const btn = document.getElementById('search-toggle-btn');
+    const inp = document.getElementById('global-search');
+    const wrap = document.querySelector('.global-search-wrap');
+    if(!btn || !inp) return;
+    if(isMob){
+      btn.style.display='flex';
+      // hide the always-open input on mobile, show via toggle
+      if(!inp.classList.contains('open')) inp.style.display='none';
+    } else {
+      btn.style.display='none';
+      inp.style.display='';
+      inp.classList.add('open');
+    }
+  }
+  adaptSearch();
+  window.addEventListener('resize', adaptSearch);
+  // Override toggleGlobalSearch for mobile
+  const origToggle = window.toggleGlobalSearch;
+  window.toggleGlobalSearch = function(){
+    const isMob = window.innerWidth <= 768;
+    if(isMob){
+      const inp = document.getElementById('global-search');
+      if(inp.style.display==='none'||inp.style.display===''){
+        inp.style.display='block';
+        inp.classList.add('open');
+        inp.focus();
+      } else {
+        inp.style.display='none';
+        inp.classList.remove('open');
+        inp.value='';
+        document.getElementById('search-results')?.classList.remove('open');
+      }
+    } else { origToggle(); }
+  };
+})();
 </script>
 </body>
 </html>
