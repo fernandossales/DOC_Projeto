@@ -587,6 +587,15 @@ html,body{max-width:100vw;overflow-x:hidden}
   .emp-modal-right{flex:1 1 100% !important; width:100% !important}
   .emp-modal{flex-direction:column}
 
+  /* Maturidade por Empreendimento — % lateral é redundante no mobile
+     (a porcentagem já aparece dentro de cada barra). */
+  .mat-pct-side{display:none !important}
+
+  /* DVT do dashboard — mobile mostra apenas Empreendimento, Concessionária,
+     Disciplina e Status. Última Validade e Observação ficam ocultas. */
+  .dvt-dash-table .dvt-c-val,
+  .dvt-dash-table .dvt-c-obs{display:none !important}
+
   /* Header do site respeitando safe-area (notch / barra Safari) */
   header{
     flex-wrap:wrap;
@@ -1899,7 +1908,7 @@ function buildDash(){
           <div style="width:${aPct}%;height:100%;background:#b8900a;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:700;text-shadow:0 1px 2px rgba(0,0,0,.25);transition:width 1s ease" title="Em Andamento: ${e.a} (${Math.round(aPct)}%)">${aPct>=8?Math.round(aPct)+'%':''}</div>
           <div style="width:${nPct}%;height:100%;background:#bbb;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:700;text-shadow:0 1px 2px rgba(0,0,0,.25);transition:width 1s ease" title="Não Iniciado: ${e.n} (${Math.round(nPct)}%)">${nPct>=8?Math.round(nPct)+'%':''}</div>
         </div>
-        <span style="font-size:13px;font-weight:700;color:#111;width:42px;text-align:right;flex-shrink:0">${e.pct}%</span>`;
+        <span class="mat-pct-side" style="font-size:13px;font-weight:700;color:#111;width:42px;text-align:right;flex-shrink:0">${e.pct}%</span>`;
       container.appendChild(row);
     });
   })();
@@ -1909,14 +1918,14 @@ function buildDash(){
   document.getElementById('dvt-count').textContent=exp.length;
   const wrap=document.getElementById('dvt-table-wrap');
   if(!exp.length){wrap.innerHTML='<div class="no-dvt">✓ Nenhuma DVT vencida no momento</div>';return;}
-  let h=`<div style="overflow-x:hidden"><table style="table-layout:fixed;width:100%"><thead><tr>
-    <th>Empreendimento</th><th>Concessionária</th><th>Disciplina</th>
-    <th>Emissão</th><th>Última Validade</th><th>Status</th><th>Observação</th>
+  let h=`<div style="overflow-x:hidden"><table class="dvt-dash-table" style="table-layout:fixed;width:100%"><thead><tr>
+    <th class="dvt-c-emp">Empreendimento</th><th class="dvt-c-conc">Concessionária</th><th class="dvt-c-disc">Disciplina</th>
+    <th class="dvt-c-val">Última Validade</th><th class="dvt-c-stt">Status</th><th class="dvt-c-obs">Observação</th>
   </tr></thead><tbody>`;
   exp.forEach(d=>{const lv=lastVal(d);
-    h+=`<tr><td><strong>${d.emp}</strong></td><td>${d.conc}</td><td>${d.disc}</td>
-      <td class="tm">${d.emissao}</td><td class="tm">${lv}</td>
-      <td><span class="bx bx-exp">EXPIRADO</span></td><td class="to">${d.obs}</td></tr>`;
+    h+=`<tr><td class="dvt-c-emp"><strong>${d.emp}</strong></td><td class="dvt-c-conc">${d.conc}</td><td class="dvt-c-disc">${d.disc}</td>
+      <td class="dvt-c-val tm">${lv}</td>
+      <td class="dvt-c-stt"><span class="bx bx-exp">EXPIRADO</span></td><td class="dvt-c-obs to">${d.obs}</td></tr>`;
   });
   h+=`</tbody></table></div>`;
   wrap.innerHTML=h;
