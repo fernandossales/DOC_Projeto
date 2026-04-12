@@ -560,6 +560,16 @@ html,body{max-width:100vw;overflow-x:hidden}
   html,body{width:100%;max-width:100vw;overflow-x:hidden}
   body{font-size:12px}
 
+  /* Mobile usa apenas a navegação inferior (#bottom-nav).
+     Oculta as abas superiores para evitar duplicidade. */
+  .tab-bar{display:none !important}
+
+  /* Margens laterais mais estreitas no mobile */
+  .wrap, main, .page, #page-dash, #page-CTR, #page-DVT, #page-NN{
+    padding-left:10px !important;
+    padding-right:10px !important;
+  }
+
   /* Header do site respeitando safe-area (notch / barra Safari) */
   header{
     flex-wrap:wrap;
@@ -2206,6 +2216,12 @@ function buildEmpV2(key){
     // Reorder items so rows with the same projeto become consecutive (stable sort
     // by first occurrence) — this handles cases where the source has the same
     // discipline scattered across multiple folders.
+    if(!isInfra){
+      // Drop ghost items with no projeto name (cause empty leading rows)
+      for(let k=items.length-1;k>=0;k--){
+        if(!((items[k].r.projeto||'').trim())) items.splice(k,1);
+      }
+    }
     const projSpan = new Array(items.length).fill(1);
     const projSkip = new Array(items.length).fill(false);
     if(!isInfra){
