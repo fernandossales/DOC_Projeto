@@ -322,6 +322,16 @@ td:last-child{border-right:none}
 #page-CTR table#ctr-table{table-layout:fixed;width:100%}
 #page-CTR table#ctr-table td,
 #page-CTR table#ctr-table th{overflow:hidden;text-overflow:ellipsis}
+
+/* Tabela de Contratos: altura máxima ~13 linhas + header fixo ao rolar.
+   Média de ~34px por linha + ~42px do thead. */
+.ctr-table-scroll{max-height:calc(13 * 34px + 46px);overflow-y:auto;overflow-x:hidden}
+.ctr-table-scroll::-webkit-scrollbar{width:10px}
+.ctr-table-scroll::-webkit-scrollbar-track{background:rgba(0,0,0,.04);border-radius:8px}
+.ctr-table-scroll::-webkit-scrollbar-thumb{background:rgba(0,0,0,.2);border-radius:8px}
+.ctr-table-scroll::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,.35)}
+.ctr-table-scroll table#ctr-table thead{position:sticky;top:0;z-index:5}
+.ctr-table-scroll table#ctr-table thead th{background:#1c1c1c}
 #page-CTR tbody tr:hover{transform:none}
 
 /* ── Empreendimento Modal ── */
@@ -586,7 +596,7 @@ html,body{max-width:100vw;overflow-x:hidden}
 
 /* ─── MOBILE: abaixo de 768px ─── */
 /* ── Contratos: cards mobile (escondidos no desktop por padrão) ── */
-.ctr-mobile-only{display:none}
+.ctr-mobile-only{display:none !important}
 .ctr-cards-list{display:flex;flex-direction:column;gap:10px;margin-top:8px}
 .ctr-card{background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:10px;padding:12px 13px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:6px}
 .ctr-card-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -2799,7 +2809,7 @@ function buildContracts(){
     <button class="fb" onclick="document.getElementById('ctr-femp').value='ALL';document.getElementById('ctr-ftipo').value='ALL';document.getElementById('ctr-fdesc').value='';filterContratos()">&#8635; Limpar</button>
   </div>`;
 
-  let tableHtml=`<div class="tw reveal ctr-desktop-only"><table id="ctr-table">
+  let tableHtml=`<div class="tw reveal ctr-desktop-only ctr-table-scroll"><table id="ctr-table">
     <thead><tr>
       <th>Cód. Contrato</th><th>Tipo</th><th>Empreendimento</th>
       <th>Contratado</th><th>Descrição</th>
