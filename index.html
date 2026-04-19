@@ -1577,7 +1577,7 @@ async function loadFromSheets(forceRefresh){
   const newD = {};
   const errors = [];
 
-  for(const key of ["RIV","CTM","EXT","KEN","MLU","JBR","GE"]){
+  for(const key of [...EK, "GE"]){
     try {
       const gviz = await fetchSheet(SHEETS_TABS[key]);
       newD[key] = {name: EMP_NAMES[key], rows: parseEmpSheet(gviz, key==="GE"), pranchas: []};
@@ -1620,7 +1620,7 @@ async function loadFromSheets(forceRefresh){
   }
 
   // If everything failed, throw a consolidated error so the overlay shows it
-  const totalEmpRows = ["RIV","CTM","EXT","KEN","MLU","JBR","GE"]
+  const totalEmpRows = [...EK, "GE"]
     .reduce((s,k)=>s+(newD[k]?.rows?.length||0),0);
   if(totalEmpRows === 0 && newContracts.length === 0 && newNN.length === 0){
     throw new Error("Não foi possível carregar nenhum dado. Verifique se a planilha está compartilhada como 'Qualquer pessoa com o link — Leitor'. Detalhes: " + errors.join(" | "));
@@ -1775,7 +1775,7 @@ async function reloadAllFromSheets(forceRefresh){
   safeRun("buildDash", buildDash);
   safeRun("buildNN", buildNN);
   safeRun("buildFinancialDash", buildFinancialDash);
-  ["RIV","CTM","EXT","KEN","MLU","JBR","GE"].forEach(k=>safeRun(`buildEmp(${k})`, ()=>buildEmp(k)));
+  [...EK, "GE"].forEach(k=>safeRun(`buildEmp(${k})`, ()=>buildEmp(k)));
   safeRun("buildContracts", buildContracts);
   safeRun("buildDVT", buildDVT);
   safeRun("buildNNPage", buildNNPage);
@@ -3356,7 +3356,8 @@ function openEmpStatusModal(empKey){
   }
 
   // ── EK navigation order ──
-  const EK_NAV = ['RIV','CTM','EXT','KEN','MLU','JBR'];
+  // Usa EK derivado do registro central, que já exclui GE (GE não é um empreendimento navegável).
+  const EK_NAV = EK;
 
   let chartHtml = '';
   let rowIndex = 0;
@@ -3862,7 +3863,11 @@ function runGlobalSearch(q){
   const hits = [];
 
   // Search empreendimentos
-  const EMP_LABELS = {RIV:'Riviera',CTM:'Costamare',EXT:'Exclusive',KEN:'Kennedy',MLU:'Marcos L.',JBR:'Jane B.',GE:'Gestão'};
+  // Labels curtos derivados do registro central. GE tem label manual.
+  const EMP_LABELS = Object.fromEntries([
+    ...EMPREENDIMENTOS.map(e => [e.code, e.name.split(' ')[0]]),
+    ['GE', 'Gestão'],
+  ]);
   Object.keys(D).forEach(k=>{
     const rows = D[k]?.rows || [];
     rows.forEach(r=>{
