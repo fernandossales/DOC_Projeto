@@ -20,10 +20,40 @@
   --ease:cubic-bezier(.4,0,.2,1);
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'DM Sans',sans-serif;background:#f5f5f3;color:var(--text);min-height:100vh;font-size:13px;overflow-x:hidden}
+body{
+  font-family:'DM Sans',sans-serif;
+  background:#eceeea;
+  color:var(--text);min-height:100vh;font-size:13px;overflow-x:hidden;
+  position:relative;
+}
+/* ── Fundo geométrico minimalista (SVG inline via data URI) ──
+   Padrão de quadrados brancos em diagonal, rotacionados, com sombras sutis.
+   Fixo na tela, não rola com o conteúdo. */
+body::before{
+  content:'';
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-color:#eceeea;
+  background-image:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='420' height='420' viewBox='0 0 420 420'><defs><filter id='sh' x='-20%25' y='-20%25' width='140%25' height='140%25'><feGaussianBlur in='SourceAlpha' stdDeviation='4'/><feOffset dx='2' dy='4'/><feComponentTransfer><feFuncA type='linear' slope='0.18'/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in='SourceGraphic'/></feMerge></filter></defs><g filter='url(%23sh)'><rect x='30' y='30' width='70' height='70' rx='6' transform='rotate(45 65 65)' fill='%23ffffff'/><rect x='320' y='50' width='90' height='90' rx='8' transform='rotate(45 365 95)' fill='%23f7f7f5'/><rect x='100' y='220' width='60' height='60' rx='5' transform='rotate(45 130 250)' fill='%23ffffff'/><rect x='280' y='280' width='80' height='80' rx='7' transform='rotate(45 320 320)' fill='%23f5f5f3'/><rect x='-10' y='340' width='50' height='50' rx='4' transform='rotate(45 15 365)' fill='%23ffffff'/></g></svg>");
+  background-size:820px 820px;
+  background-position:center center;
+  opacity:.85;
+}
+/* Conteúdo acima do fundo */
+header, .tab-bar, .wrap, main, .page, .footer, #bottom-nav{position:relative;z-index:1}
 
 /* ─── HEADER ─── */
-header{background:var(--black);height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:200;border-bottom:2.5px solid var(--green)}
+header{
+  background:var(--black);
+  height:58px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 28px;
+  position:fixed;top:0;left:0;right:0;z-index:200;
+  border-bottom:2.5px solid var(--green);
+  border-radius:0 0 20px 20px;
+  box-shadow:0 6px 24px rgba(0,0,0,.18);
+}
+/* Body ganha padding-top para compensar header fixo */
+body{padding-top:58px}
 .logo-wrap img{height:38px;width:auto;display:block;filter:invert(1) brightness(2);transition:opacity .2s var(--ease)}
 .logo-wrap img:hover{opacity:.8}
 .hdr-title{font-size:15px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#fff;position:absolute;left:50%;transform:translateX(-50%);white-space:nowrap}
@@ -74,16 +104,44 @@ header{background:var(--black);height:58px;display:flex;align-items:center;justi
 .sec.anim{opacity:1;transform:translateX(0)}
 .sec::before{content:'';width:3px;height:14px;background:var(--yellow);border-radius:2px;flex-shrink:0}
 
+/* ── Hachura diagonal verde sobre fundo cinza ──
+   Substitui o preenchimento sólido ouro de "Em Andamento" nos gráficos.
+   Base cinza visível entre as listras; linhas diagonais verdes ascendentes. */
+.striped-green{
+  background-color:#d0d4cc !important;
+  background-image:repeating-linear-gradient(
+    45deg,
+    #2eb86e 0,
+    #2eb86e 4px,
+    transparent 4px,
+    transparent 9px
+  ) !important;
+}
+
 /* ─── KPI CARDS ─── */
 .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:12px;margin-bottom:22px}
-.kpi-card{background:#fff;border-radius:10px;padding:16px 15px 13px;box-shadow:var(--shadow);border:1px solid rgba(0,0,0,.07);position:relative;overflow:hidden;transition:box-shadow .25s var(--ease),transform .25s var(--ease);cursor:default;opacity:0;transform:translateY(16px)}
+.kpi-card{
+  background:rgba(255,255,255,.55);
+  -webkit-backdrop-filter:blur(16px) saturate(150%);
+  backdrop-filter:blur(16px) saturate(150%);
+  border-radius:14px;padding:18px 15px 15px;
+  border:1px solid rgba(255,255,255,.5);
+  box-shadow:0 1px 0 rgba(255,255,255,.6) inset, 0 8px 24px rgba(13,13,13,.08);
+  position:relative;overflow:hidden;
+  transition:box-shadow .25s var(--ease),transform .25s var(--ease);
+  cursor:default;opacity:0;transform:translateY(16px);
+  text-align:center;
+}
+@supports not (backdrop-filter: blur(1px)){
+  .kpi-card{background:rgba(255,255,255,.9)}
+}
 .kpi-card.anim{opacity:1;transform:translateY(0)}
 .kpi-card:hover{box-shadow:var(--shadowH);transform:translateY(-3px)}
 .kpi-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;border-radius:0 0 10px 10px;transform:scaleX(0);transform-origin:left;transition:transform .3s var(--ease)}
 .kpi-card.anim::after{transform:scaleX(1)}
 .kpi-card.cg::after{background:var(--green)}.kpi-card.cy::after{background:var(--yellow)}
 .kpi-card.ca::after{background:var(--gray-400)}.kpi-card.cr::after{background:var(--red)}
-.kpi-num{font-size:38px;font-weight:700;line-height:1;margin-bottom:4px;font-variant-numeric:tabular-nums}
+.kpi-num{font-size:38px;font-weight:700;line-height:1;margin-bottom:4px;font-variant-numeric:tabular-nums;text-align:center}
 .kpi-card.cg .kpi-num{color:var(--green)}.kpi-card.cy .kpi-num{color:var(--yellow)}
 .kpi-card.ca .kpi-num{color:var(--gray-400)}.kpi-card.cr .kpi-num{color:var(--red)}
 .kpi-lbl{font-size:9.5px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--gray-600)}
@@ -91,7 +149,20 @@ header{background:var(--black);height:58px;display:flex;align-items:center;justi
 /* ─── CHART GRID ─── */
 .c2{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:22px}
 @media(max-width:1100px){.c2{grid-template-columns:1fr}}
-.chart-card{background:#fff;border-radius:10px;padding:16px;box-shadow:var(--shadow);border:1px solid rgba(0,0,0,.07);opacity:0;transform:translateY(16px);transition:opacity .4s var(--ease),transform .4s var(--ease),box-shadow .25s var(--ease)}
+.chart-card{
+  background:rgba(255,255,255,.55);
+  -webkit-backdrop-filter:blur(16px) saturate(150%);
+  backdrop-filter:blur(16px) saturate(150%);
+  border-radius:14px;padding:18px 16px;
+  border:1px solid rgba(255,255,255,.5);
+  box-shadow:0 1px 0 rgba(255,255,255,.6) inset, 0 10px 30px rgba(13,13,13,.08);
+  opacity:0;transform:translateY(16px);
+  transition:opacity .4s var(--ease),transform .4s var(--ease),box-shadow .25s var(--ease);
+  text-align:center;
+}
+@supports not (backdrop-filter: blur(1px)){
+  .chart-card{background:rgba(255,255,255,.9)}
+}
 .chart-card.anim{opacity:1;transform:translateY(0)}
 .chart-card:hover{box-shadow:var(--shadowH)}
 .chart-head{font-size:10.5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text);margin-bottom:3px}
@@ -100,14 +171,40 @@ header{background:var(--black);height:58px;display:flex;align-items:center;justi
 
 /* ─── GAUGE CARDS ─── */
 .grow{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:14px;margin-bottom:22px}
-.gcrd{background:#fff;border-radius:10px;padding:16px 12px 13px;box-shadow:var(--shadow-card);border:1px solid rgba(0,0,0,.08);text-align:center;transition:box-shadow .25s var(--ease),transform .25s var(--ease);opacity:0;transform:translateY(16px)}
+.gcrd{
+  background:rgba(255,255,255,.55);
+  -webkit-backdrop-filter:blur(16px) saturate(150%);
+  backdrop-filter:blur(16px) saturate(150%);
+  border-radius:14px;padding:16px 12px 13px;
+  border:1px solid rgba(255,255,255,.5);
+  box-shadow:0 1px 0 rgba(255,255,255,.6) inset, 0 8px 24px rgba(13,13,13,.08);
+  text-align:center;
+  transition:box-shadow .25s var(--ease),transform .25s var(--ease);
+  opacity:0;transform:translateY(16px);
+}
+@supports not (backdrop-filter: blur(1px)){
+  .gcrd{background:rgba(255,255,255,.9)}
+}
 .gcrd.anim{opacity:1;transform:translateY(0)}
 .gcrd:hover{box-shadow:var(--shadowH);transform:translateY(-3px)}
 .gemp{font-size:9.5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--gray-600);margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--gray-100)}
 .gsub{font-size:9.5px;color:var(--gray-600);margin-top:6px;line-height:1.5;padding-top:6px;border-top:1px solid var(--gray-100)}
 
 /* ─── DVT CARD ─── */
-.dvt-card{background:#fff;border-radius:10px;box-shadow:var(--shadow);border:1px solid rgba(0,0,0,.07);overflow:hidden;margin-bottom:20px;opacity:0;transform:translateY(16px);transition:opacity .4s var(--ease),transform .4s var(--ease)}
+.dvt-card{
+  background:rgba(255,255,255,.55);
+  -webkit-backdrop-filter:blur(16px) saturate(150%);
+  backdrop-filter:blur(16px) saturate(150%);
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.5);
+  box-shadow:0 1px 0 rgba(255,255,255,.6) inset, 0 10px 30px rgba(13,13,13,.08);
+  overflow:hidden;margin-bottom:20px;
+  opacity:0;transform:translateY(16px);
+  transition:opacity .4s var(--ease),transform .4s var(--ease);
+}
+@supports not (backdrop-filter: blur(1px)){
+  .dvt-card{background:rgba(255,255,255,.9)}
+}
 .dvt-card.anim{opacity:1;transform:translateY(0)}
 .dvt-hdr{background:var(--black);padding:11px 16px;display:flex;align-items:center;gap:10px;border-bottom:2px solid var(--red)}
 .dvt-ht{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gray-400)}
@@ -1840,20 +1937,21 @@ function countST(rows){
 }
 
 // Contagem POR LINHA (projeto). Regra:
-//  - Aplicáveis = fases EP/AP/PL/PE que não são 'N/A' e têm valor válido.
-//  - Se não há fase aplicável → linha ignorada (não entra em tot).
-//  - Se todas aplicáveis = CONCLUIDO → linha concluída.
-//  - Se alguma aplicável = EM ANDAMENTO → linha em andamento.
-//  - Caso contrário (alguma NÃO INICIADA, nenhuma EM ANDAMENTO) → linha não iniciada.
+//  - tot = TODAS as linhas do empreendimento (o que aparece na planilha).
+//  - Aplicáveis = fases EP/AP/PL/PE com valor válido (N/A não é válido).
+//  - Se todas aplicáveis = CONCLUIDO → linha concluída (c).
+//  - Se alguma aplicável = EM ANDAMENTO → linha em andamento (a).
+//  - Se tem aplicáveis mas nenhuma concluída/em andamento → não iniciada (n).
+//  - Linhas sem nenhuma fase aplicável entram em tot mas não em c/a/n.
 function countRowStatus(rows){
   let c=0,a=0,n=0,tot=0;
   rows.forEach(r=>{
-    const vals = ST.map(s => r[s]).filter(v => isV(v) && v !== 'N/A');
-    if(vals.length === 0) return; // linha sem fase aplicável
-    tot++;
+    tot++; // conta toda linha
+    const vals = ST.map(s => r[s]).filter(isV);
+    if(vals.length === 0) return; // sem fase aplicável: só entra no total
     if(vals.some(v => v === A)) a++;
     else if(vals.every(v => v === C)) c++;
-    else n++; // alguma N.I. e nenhuma EM ANDAMENTO
+    else n++;
   });
   return {c, a, n, tot};
 }
@@ -1861,6 +1959,33 @@ function countRowStatus(rows){
 const EK = EMPREENDIMENTOS.map(e => e.code);
 
 // ── ANIMATED COUNTER ──
+// Gera um CanvasPattern com listras diagonais verdes sobre fundo cinza.
+// Usado nos datasets do Chart.js para representar "Em Andamento" / "Saldo"
+// com o mesmo visual da classe CSS .striped-green.
+// Cache por contexto para não recriar a cada redraw.
+const _stripedPatternCache = new WeakMap();
+function stripedGreenPattern(chartCtx){
+  if(!chartCtx) return '#d0d4cc';
+  if(_stripedPatternCache.has(chartCtx)) return _stripedPatternCache.get(chartCtx);
+  const off = document.createElement('canvas');
+  off.width = 12; off.height = 12;
+  const c = off.getContext('2d');
+  // Fundo cinza
+  c.fillStyle = '#d0d4cc';
+  c.fillRect(0,0,12,12);
+  // Linhas diagonais verdes ascendentes (45deg), 4px de largura, espaçadas
+  c.strokeStyle = '#2eb86e';
+  c.lineWidth = 4;
+  c.lineCap = 'square';
+  c.beginPath();
+  c.moveTo(-3, 15); c.lineTo(15, -3);
+  c.moveTo(-3, 27); c.lineTo(27, -3);
+  c.stroke();
+  const pattern = chartCtx.createPattern(off, 'repeat');
+  _stripedPatternCache.set(chartCtx, pattern);
+  return pattern;
+}
+
 function animCount(el,target,duration=1200){
   // Se anime.js estiver disponível, usa a lib (easing mais suave, precisão subpixel).
   // Caso contrário, fallback para o rAF manual original.
@@ -1947,7 +2072,6 @@ function buildDash(){
     {cls:'cg',val:rl,lbl:'Projetos — por Linha (Total / C / A / N)',
       breakdown:{c:rlc,a:rla,n:rln},key:'projetos-linha'},
     {cls:'cy',val:totalTerrenosNN,lbl:'Terrenos Novos Negócios',key:'terrenos'},
-    {cls:'cy',val:_fmtBRLcompact(totalSaldoAberto),lbl:'Saldo (R$) em Aberto',raw:true,key:'saldo'},
     {cls:'cr',val:dvtExp,lbl:'DVT Expiradas',key:'dvt'},
   ];
 
@@ -2014,11 +2138,11 @@ function buildDash(){
     const leg = document.createElement('div');
     leg.style.cssText = 'display:flex;gap:18px;margin-bottom:14px;flex-wrap:wrap;padding-left:118px';
     leg.innerHTML = [
-      {col:'#2eb86e',lbl:'Concluído'},
-      {col:'#b8900a',lbl:'Em andamento'},
-      {col:'#bbb',lbl:'Não iniciado'}
+      {col:'#2eb86e',lbl:'Concluído',striped:false},
+      {col:'',lbl:'Em andamento',striped:true},
+      {col:'#999',lbl:'Não iniciado',striped:false}
     ].map(l=>`<span style="display:flex;align-items:center;gap:6px;font-size:11px;color:#666;font-weight:500">
-      <span style="width:10px;height:10px;border-radius:2px;background:${l.col};display:inline-block"></span>${l.lbl}
+      <span class="${l.striped?'striped-green':''}" style="width:14px;height:10px;border-radius:2px;${l.striped?'':'background:'+l.col+';'}display:inline-block;border:1px solid rgba(0,0,0,.08)"></span>${l.lbl}
     </span>`).join('');
     container.appendChild(leg);
 
@@ -2038,8 +2162,8 @@ function buildDash(){
         <span style="font-size:13px;color:#333;width:110px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600">${e.name}</span>
         <div style="flex:1;height:22px;background:#f0f0ed;border-radius:4px;overflow:hidden;display:flex;box-shadow:inset 0 1px 2px rgba(0,0,0,.04)">
           <div style="width:${cPct}%;height:100%;background:#2eb86e;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:700;text-shadow:0 1px 2px rgba(0,0,0,.25);transition:width 1s ease" title="Concluído: ${e.c} (${Math.round(cPct)}%)">${cPct>=8?Math.round(cPct)+'%':''}</div>
-          <div style="width:${aPct}%;height:100%;background:#b8900a;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:700;text-shadow:0 1px 2px rgba(0,0,0,.25);transition:width 1s ease" title="Em Andamento: ${e.a} (${Math.round(aPct)}%)">${aPct>=8?Math.round(aPct)+'%':''}</div>
-          <div style="width:${nPct}%;height:100%;background:#bbb;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:700;text-shadow:0 1px 2px rgba(0,0,0,.25);transition:width 1s ease" title="Não Iniciado: ${e.n} (${Math.round(nPct)}%)">${nPct>=8?Math.round(nPct)+'%':''}</div>
+          <div class="striped-green" style="width:${aPct}%;height:100%;display:flex;align-items:center;justify-content:center;color:#1a1a1a;font-size:10px;font-weight:700;transition:width 1s ease" title="Em Andamento: ${e.a} (${Math.round(aPct)}%)">${aPct>=8?Math.round(aPct)+'%':''}</div>
+          <div style="width:${nPct}%;height:100%;background:#999;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:700;text-shadow:0 1px 2px rgba(0,0,0,.25);transition:width 1s ease" title="Não Iniciado: ${e.n} (${Math.round(nPct)}%)">${nPct>=8?Math.round(nPct)+'%':''}</div>
         </div>
         <span class="mat-pct-side" style="font-size:13px;font-weight:700;color:#111;width:42px;text-align:right;flex-shrink:0">${e.pct}%</span>`;
       container.appendChild(row);
@@ -2823,13 +2947,15 @@ function buildFinancialDash(){
     // Also clear canvas dimensions to fully reset
     _ctxC.width = _ctxC.width;
   }
+  // Pattern hachurado verde para o dataset "Saldo" (análogo visual a "Em Andamento")
+  const _saldoPattern = _ctxC ? stripedGreenPattern(_ctxC.getContext('2d')) : '#d0d4cc';
   new Chart(_ctxC,{
     type:'bar',
     data:{
       labels:empLabels,
       datasets:[
         {label:'Pago',data:emps.map(e=>Math.round(e[1].pg)),backgroundColor:'#2eb86e',borderRadius:3},
-        {label:'Saldo',data:emps.map(e=>Math.round(e[1].sl<0?0:e[1].sl)),backgroundColor:'#b8900a',borderRadius:3},
+        {label:'Saldo',data:emps.map(e=>Math.round(e[1].sl<0?0:e[1].sl)),backgroundColor:_saldoPattern,borderColor:'rgba(46,184,110,.4)',borderWidth:1,borderRadius:3},
       ]
     },
     options:{
@@ -2869,8 +2995,8 @@ function buildFinancialDash(){
     if(!cont)return;
     const maxVT=Math.max(...top10.map(e=>e[1].vt))||1;
     let html=`<div style="display:flex;gap:14px;margin-bottom:10px;font-size:10px;color:#666;font-weight:600">
-      <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;background:#2eb86e;border-radius:2px"></span>Pago</span>
-      <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;background:#b8900a;border-radius:2px"></span>Saldo</span>
+      <span style="display:flex;align-items:center;gap:5px"><span style="width:14px;height:10px;background:#2eb86e;border-radius:2px;border:1px solid rgba(0,0,0,.08)"></span>Pago</span>
+      <span style="display:flex;align-items:center;gap:5px"><span class="striped-green" style="width:14px;height:10px;border-radius:2px;border:1px solid rgba(0,0,0,.08)"></span>Saldo</span>
     </div>`;
     top10.forEach(([nm,d])=>{
       const sl=Math.max(0,d.vt-d.pg);
@@ -2881,7 +3007,7 @@ function buildFinancialDash(){
         <span style="width:118px;flex-shrink:0;font-weight:600;color:#333;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${nm.replace(/"/g,'&quot;')}">${lbl}</span>
         <div style="flex:1;height:18px;background:#f0f0ed;border-radius:3px;overflow:hidden;display:flex;box-shadow:inset 0 1px 2px rgba(0,0,0,.04)">
           <div style="width:${pgPct}%;background:#2eb86e;height:100%" title="Pago: ${fmtBRL(d.pg)}"></div>
-          <div style="width:${slPct}%;background:#b8900a;height:100%" title="Saldo: ${fmtBRL(sl)}"></div>
+          <div class="striped-green" style="width:${slPct}%;height:100%" title="Saldo: ${fmtBRL(sl)}"></div>
         </div>
         <span style="width:78px;flex-shrink:0;text-align:right;font-family:monospace;font-size:10px;color:#111;font-weight:700">${fmtBRLk(d.vt)}</span>
       </div>`;
