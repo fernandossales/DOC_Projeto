@@ -108,7 +108,7 @@ body{padding-top:58px}
    Substitui o preenchimento sólido ouro de "Em Andamento" nos gráficos.
    Base cinza visível entre as listras; linhas diagonais verdes ascendentes. */
 .striped-green{
-  background-color:#999 !important;
+  background-color:#f5f3ee !important;
   background-image:repeating-linear-gradient(
     45deg,
     #2eb86e 0,
@@ -1986,13 +1986,13 @@ const EK = EMPREENDIMENTOS.map(e => e.code);
 // Cache por contexto para não recriar a cada redraw.
 const _stripedPatternCache = new WeakMap();
 function stripedGreenPattern(chartCtx){
-  if(!chartCtx) return '#999';
+  if(!chartCtx) return '#f5f3ee';
   if(_stripedPatternCache.has(chartCtx)) return _stripedPatternCache.get(chartCtx);
   const off = document.createElement('canvas');
   off.width = 12; off.height = 12;
   const c = off.getContext('2d');
   // Fundo cinza
-  c.fillStyle = '#999';
+  c.fillStyle = '#f5f3ee';
   c.fillRect(0,0,12,12);
   // Linhas diagonais verdes ascendentes (45deg), 4px de largura, espaçadas
   c.strokeStyle = '#2eb86e';
@@ -2967,7 +2967,7 @@ function buildFinancialDash(){
     _ctxC.width = _ctxC.width;
   }
   // Pattern hachurado verde para o dataset "Saldo" (análogo visual a "Em Andamento")
-  const _saldoPattern = _ctxC ? stripedGreenPattern(_ctxC.getContext('2d')) : '#999';
+  const _saldoPattern = _ctxC ? stripedGreenPattern(_ctxC.getContext('2d')) : '#f5f3ee';
   new Chart(_ctxC,{
     type:'bar',
     data:{
