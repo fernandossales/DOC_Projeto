@@ -41,11 +41,13 @@ header{background:var(--black);height:58px;display:flex;align-items:center;justi
 .tab-dropdown-toggle{display:inline-flex;align-items:center;gap:6px}
 .tab-dd-caret{transition:transform .2s var(--ease);opacity:.7}
 .tab-dropdown.open .tab-dd-caret{transform:rotate(180deg)}
+/* IMPORTANTE: position:fixed evita que o overflow-x:auto da .tab-bar clipe o menu.
+   As coordenadas top/left são definidas em runtime por toggleEmpDropdown(). */
 .tab-dropdown-menu{
-  position:absolute;top:100%;left:0;min-width:210px;
+  position:fixed;min-width:210px;
   background:var(--dark);border:1px solid #2a2a2a;border-top:none;
   border-radius:0 0 8px 8px;box-shadow:0 8px 28px rgba(0,0,0,.35);
-  display:none;z-index:1000;padding:4px 0;
+  display:none;z-index:10000;padding:4px 0;
 }
 .tab-dropdown.open .tab-dropdown-menu{display:block}
 .tab-dropdown-item{
@@ -2631,9 +2633,17 @@ function toggleEmpDropdown(ev){
   if(ev) ev.stopPropagation();
   const dd = document.getElementById('tab-dropdown-emp');
   if(!dd) return;
-  const open = dd.classList.toggle('open');
   const toggle = dd.querySelector('.tab-dropdown-toggle');
+  const menu = dd.querySelector('.tab-dropdown-menu');
+  const open = dd.classList.toggle('open');
   if(toggle) toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  // Como o menu é position:fixed (para escapar do overflow da .tab-bar),
+  // calculamos top/left a partir do botão em runtime.
+  if(open && toggle && menu){
+    const r = toggle.getBoundingClientRect();
+    menu.style.top  = r.bottom + 'px';
+    menu.style.left = r.left   + 'px';
+  }
 }
 function closeEmpDropdown(){
   const dd = document.getElementById('tab-dropdown-emp');
