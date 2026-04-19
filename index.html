@@ -2614,10 +2614,18 @@ function showTab(id,btn){
 // ── Empreendimentos dropdown (desktop) ──
 function initEmpDropdown(){
   const menu = document.getElementById('emp-dropdown-menu');
-  if(!menu) return;
+  if(!menu){
+    console.warn('[initEmpDropdown] #emp-dropdown-menu não encontrado no DOM');
+    return;
+  }
+  if(typeof EMPREENDIMENTOS === 'undefined'){
+    console.error('[initEmpDropdown] EMPREENDIMENTOS não definido');
+    return;
+  }
   menu.innerHTML = EMPREENDIMENTOS.map(e =>
     `<button type="button" class="tab-dropdown-item" data-code="${e.code}" onclick="pickEmp('${e.code}')">${e.name}</button>`
   ).join('');
+  console.log(`[initEmpDropdown] ${EMPREENDIMENTOS.length} empreendimentos carregados no dropdown`);
 }
 function toggleEmpDropdown(ev){
   if(ev) ev.stopPropagation();
@@ -2641,6 +2649,16 @@ document.addEventListener('click', (e)=>{
   const dd = document.getElementById('tab-dropdown-emp');
   if(dd && !dd.contains(e.target)) closeEmpDropdown();
 });
+
+// Garantia extra: popula o dropdown em vários momentos para cobrir todos os
+// caminhos de inicialização (login overlay, DOMContentLoaded, etc.)
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', initEmpDropdown);
+} else {
+  // DOM já carregado quando o script chegou aqui
+  initEmpDropdown();
+}
+window.addEventListener('load', initEmpDropdown); // fallback final
 
 // ── TOOLTIP on obs cells (hover) ──
 function setupTooltips(){
