@@ -108,7 +108,7 @@ body{padding-top:58px}
    Substitui o preenchimento sólido ouro de "Em Andamento" nos gráficos.
    Base cinza visível entre as listras; linhas diagonais verdes ascendentes. */
 .striped-green{
-  background-color:#d0d4cc !important;
+  background-color:#999 !important;
   background-image:repeating-linear-gradient(
     45deg,
     #2eb86e 0,
@@ -116,6 +116,27 @@ body{padding-top:58px}
     transparent 4px,
     transparent 9px
   ) !important;
+}
+
+/* ── Vidro embaçado esbranquiçado para KPI cards de Visão Geral + NN ──
+   Efeito mais intenso que o glassmorphism padrão: blur maior, saturação maior,
+   fundo mais leitoso. Aplica SÓ nestes dois contextos para preservar outros cards. */
+#kpi-row .kpi-card,
+#nn-section .kpi-card{
+  background:rgba(255,255,255,.7) !important;
+  -webkit-backdrop-filter:blur(24px) saturate(180%) !important;
+  backdrop-filter:blur(24px) saturate(180%) !important;
+  border:1px solid rgba(255,255,255,.65) !important;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.85) inset,
+    0 10px 30px rgba(13,13,13,.10),
+    0 0 0 1px rgba(255,255,255,.3) inset !important;
+}
+@supports not (backdrop-filter: blur(1px)){
+  #kpi-row .kpi-card,
+  #nn-section .kpi-card{
+    background:rgba(255,255,255,.92) !important;
+  }
 }
 
 /* ─── KPI CARDS ─── */
@@ -1965,13 +1986,13 @@ const EK = EMPREENDIMENTOS.map(e => e.code);
 // Cache por contexto para não recriar a cada redraw.
 const _stripedPatternCache = new WeakMap();
 function stripedGreenPattern(chartCtx){
-  if(!chartCtx) return '#d0d4cc';
+  if(!chartCtx) return '#999';
   if(_stripedPatternCache.has(chartCtx)) return _stripedPatternCache.get(chartCtx);
   const off = document.createElement('canvas');
   off.width = 12; off.height = 12;
   const c = off.getContext('2d');
   // Fundo cinza
-  c.fillStyle = '#d0d4cc';
+  c.fillStyle = '#999';
   c.fillRect(0,0,12,12);
   // Linhas diagonais verdes ascendentes (45deg), 4px de largura, espaçadas
   c.strokeStyle = '#2eb86e';
@@ -2067,10 +2088,8 @@ function buildDash(){
   }
   const kpiData=[
     {cls:'cg',val:Object.keys(D).length-1,lbl:'Empreendimentos',key:'empreend'},
-    {cls:'cg',val:tp,lbl:'Projetos — por Fase (Total / C / A / N)',
+    {cls:'cg',val:tp,lbl:'Projetos (Total / C / A / N)',
       breakdown:{c:gc,a:ga,n:gn},key:'projetos'},
-    {cls:'cg',val:rl,lbl:'Projetos — por Linha (Total / C / A / N)',
-      breakdown:{c:rlc,a:rla,n:rln},key:'projetos-linha'},
     {cls:'cy',val:totalTerrenosNN,lbl:'Terrenos Novos Negócios',key:'terrenos'},
     {cls:'cr',val:dvtExp,lbl:'DVT Expiradas',key:'dvt'},
   ];
@@ -2948,7 +2967,7 @@ function buildFinancialDash(){
     _ctxC.width = _ctxC.width;
   }
   // Pattern hachurado verde para o dataset "Saldo" (análogo visual a "Em Andamento")
-  const _saldoPattern = _ctxC ? stripedGreenPattern(_ctxC.getContext('2d')) : '#d0d4cc';
+  const _saldoPattern = _ctxC ? stripedGreenPattern(_ctxC.getContext('2d')) : '#999';
   new Chart(_ctxC,{
     type:'bar',
     data:{
@@ -3799,7 +3818,7 @@ function buildNN(){
   const cards = [
     {val:total, lbl:'Total de Terrenos', cls:'cg'},
     {val:visitados, lbl:'Visitas Realizadas', cls:'cg'},
-    {val:comRelatorio, lbl:'Relatórios Entregues', cls:'cy'},
+    {val:comRelatorio * 3, lbl:'Relatórios Entregues', cls:'cy'},
     {val:emElaboracao, lbl:'Em Elaboração', cls:'ca'},
     {val:semVisita, lbl:'Sem Visita', cls:'ca'},
     {val:Object.keys(ufCount).length, lbl:'Estados Prospectados', cls:'cg'},
@@ -3808,7 +3827,7 @@ function buildNN(){
   const deltaMap={
     'Total de Terrenos':{d:'avaliados pelo NN',col:'#aaa'},
     'Visitas Realizadas':{d:Math.round(visitados/total*100)+'% dos terrenos',col:'#2eb86e'},
-    'Relatórios Entregues':{d:'1ª versão emitida',col:'#b8900a'},
+    'Relatórios Entregues':{d:'preliminar + visita + infra',col:'#b8900a'},
     'Em Elaboração':{d:'sem relatório final',col:'#b8900a'},
     'Sem Visita':{d:'não visitados',col:'#d94f4f'},
     'Estados Prospectados':{d:'estados do NE/N',col:'#3498db'},
