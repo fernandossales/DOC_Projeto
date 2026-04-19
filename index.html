@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
 <title>Conviver Urbanismo — Acompanhamento de Projetos</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
 :root{
@@ -1838,10 +1839,43 @@ function countST(rows){
   return{c,a,n,tot};
 }
 
+// Contagem POR LINHA (projeto). Regra:
+//  - Aplicáveis = fases EP/AP/PL/PE que não são 'N/A' e têm valor válido.
+//  - Se não há fase aplicável → linha ignorada (não entra em tot).
+//  - Se todas aplicáveis = CONCLUIDO → linha concluída.
+//  - Se alguma aplicável = EM ANDAMENTO → linha em andamento.
+//  - Caso contrário (alguma NÃO INICIADA, nenhuma EM ANDAMENTO) → linha não iniciada.
+function countRowStatus(rows){
+  let c=0,a=0,n=0,tot=0;
+  rows.forEach(r=>{
+    const vals = ST.map(s => r[s]).filter(v => isV(v) && v !== 'N/A');
+    if(vals.length === 0) return; // linha sem fase aplicável
+    tot++;
+    if(vals.some(v => v === A)) a++;
+    else if(vals.every(v => v === C)) c++;
+    else n++; // alguma N.I. e nenhuma EM ANDAMENTO
+  });
+  return {c, a, n, tot};
+}
+
 const EK = EMPREENDIMENTOS.map(e => e.code);
 
 // ── ANIMATED COUNTER ──
 function animCount(el,target,duration=1200){
+  // Se anime.js estiver disponível, usa a lib (easing mais suave, precisão subpixel).
+  // Caso contrário, fallback para o rAF manual original.
+  if(typeof anime !== 'undefined'){
+    const state = {v: 0};
+    anime({
+      targets: state,
+      v: target,
+      round: 1,
+      duration: duration,
+      easing: 'easeOutCubic',
+      update: () => { el.textContent = state.v; }
+    });
+    return;
+  }
   const start=performance.now();
   function step(now){
     const p=Math.min((now-start)/duration,1);
@@ -1862,6 +1896,22 @@ function triggerAnims(pageEl){
   pageEl.querySelectorAll('.kpi-num[data-target]').forEach(el=>{
     animCount(el,+el.dataset.target,1000);
   });
+  // Animate KPI breakdowns (C/A/N) with stagger via anime.js (entrada escalonada).
+  // Efeito: cada span aparece deslizando da esquerda com 80ms de delay entre eles.
+  if(typeof anime !== 'undefined'){
+    const spans = pageEl.querySelectorAll('.kpi-breakdown > span');
+    if(spans.length){
+      anime.set(spans, {opacity: 0, translateX: -12});
+      anime({
+        targets: spans,
+        opacity: [0, 1],
+        translateX: [-12, 0],
+        delay: anime.stagger(80, {start: 250}),
+        duration: 600,
+        easing: 'easeOutQuad'
+      });
+    }
+  }
   // Animate gauges
   pageEl.querySelectorAll('canvas.gauge-canvas').forEach(c=>{
     drawGaugeAnim(c,+c.dataset.pct);
@@ -1871,7 +1921,14 @@ function triggerAnims(pageEl){
 // ── DASHBOARD ──
 function buildDash(){
   let tp=0,gc=0,ga=0,gn=0;
-  EK.forEach(k=>{const r=D[k].rows;tp+=r.length;const s=countST(r);gc+=s.c;ga+=s.a;gn+=s.n;});
+  // Totais por LINHA (projeto inteiro)
+  let rl=0,rlc=0,rla=0,rln=0;
+  EK.forEach(k=>{
+    const r=D[k].rows;
+    tp+=r.length;
+    const s=countST(r);gc+=s.c;ga+=s.a;gn+=s.n;
+    const sr=countRowStatus(r);rl+=sr.tot;rlc+=sr.c;rla+=sr.a;rln+=sr.n;
+  });
   const dvtExp=D.DVT.filter(d=>isExp(lastVal(d))).length;
 
   // Compute extra metrics: total terrenos NN + total saldo em aberto
@@ -1885,8 +1942,10 @@ function buildDash(){
   }
   const kpiData=[
     {cls:'cg',val:Object.keys(D).length-1,lbl:'Empreendimentos',key:'empreend'},
-    {cls:'cg',val:tp,lbl:'Projetos (Total / Concl. / And. / N.Inic.)',
+    {cls:'cg',val:tp,lbl:'Projetos — por Fase (Total / C / A / N)',
       breakdown:{c:gc,a:ga,n:gn},key:'projetos'},
+    {cls:'cg',val:rl,lbl:'Projetos — por Linha (Total / C / A / N)',
+      breakdown:{c:rlc,a:rla,n:rln},key:'projetos-linha'},
     {cls:'cy',val:totalTerrenosNN,lbl:'Terrenos Novos Negócios',key:'terrenos'},
     {cls:'cy',val:_fmtBRLcompact(totalSaldoAberto),lbl:'Saldo (R$) em Aberto',raw:true,key:'saldo'},
     {cls:'cr',val:dvtExp,lbl:'DVT Expiradas',key:'dvt'},
