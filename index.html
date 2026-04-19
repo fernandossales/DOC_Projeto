@@ -2673,6 +2673,27 @@ function showTab(id,btn){
 }
 
 // ── Empreendimentos dropdown (desktop) ──
+// Garante que exista um <div id="page-XXX" class="page"> para cada empreendimento
+// do registro central. Isto permite adicionar empreendimentos sem editar o HTML
+// estático — basta incluir um item em EMPREENDIMENTOS que o container é criado aqui.
+function ensureEmpPages(){
+  EMPREENDIMENTOS.forEach(e => {
+    if(!document.getElementById('page-' + e.code)){
+      const div = document.createElement('div');
+      div.id = 'page-' + e.code;
+      div.className = 'page';
+      // Insere antes da página GE (mantém a ordem lógica dos empreendimentos)
+      const geDiv = document.getElementById('page-GE');
+      if(geDiv && geDiv.parentNode){
+        geDiv.parentNode.insertBefore(div, geDiv);
+      } else {
+        // Fallback: append ao body
+        document.body.appendChild(div);
+      }
+    }
+  });
+}
+
 function initEmpDropdown(){
   const menu = document.getElementById('emp-dropdown-menu');
   if(!menu){
@@ -2722,12 +2743,13 @@ document.addEventListener('click', (e)=>{
 // Garantia extra: popula o dropdown em vários momentos para cobrir todos os
 // caminhos de inicialização (login overlay, DOMContentLoaded, etc.)
 if(document.readyState === 'loading'){
-  document.addEventListener('DOMContentLoaded', initEmpDropdown);
+  document.addEventListener('DOMContentLoaded', () => { ensureEmpPages(); initEmpDropdown(); });
 } else {
   // DOM já carregado quando o script chegou aqui
+  ensureEmpPages();
   initEmpDropdown();
 }
-window.addEventListener('load', initEmpDropdown); // fallback final
+window.addEventListener('load', () => { ensureEmpPages(); initEmpDropdown(); }); // fallback final
 
 // ── TOOLTIP on obs cells (hover) ──
 function setupTooltips(){
@@ -3805,7 +3827,9 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   const fd = document.getElementById('fdate');
   if(fd) fd.textContent = now.toLocaleDateString('pt-BR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
 
-  // Popula dropdown de empreendimentos a partir do registro central
+  // Garante que os containers de páginas e o dropdown estejam prontos antes
+  // de qualquer render que dependa deles.
+  ensureEmpPages();
   initEmpDropdown();
 
   // Load data from Google Sheets and render everything
