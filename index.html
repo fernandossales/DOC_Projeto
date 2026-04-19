@@ -80,7 +80,8 @@ body{padding-top:58px}
   border-radius:0 0 8px 8px;box-shadow:0 8px 28px rgba(0,0,0,.35);
   display:none;z-index:10000;padding:4px 0;
 }
-.tab-dropdown.open .tab-dropdown-menu{display:block}
+.tab-dropdown.open .tab-dropdown-menu,
+.tab-dropdown-menu.is-open{display:block}
 .tab-dropdown-item{
   display:block;width:100%;text-align:left;background:transparent;border:none;
   color:var(--gray-400);font-family:'DM Sans',sans-serif;font-size:11px;
@@ -2857,15 +2858,30 @@ function toggleEmpDropdown(ev){
   const dd = document.getElementById('tab-dropdown-emp');
   if(!dd) return;
   const toggle = dd.querySelector('.tab-dropdown-toggle');
-  const menu = dd.querySelector('.tab-dropdown-menu');
+  const menu = dd.querySelector('.tab-dropdown-menu') || document.getElementById('emp-dropdown-menu');
   const open = dd.classList.toggle('open');
   if(toggle) toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
   // Como o menu é position:fixed (para escapar do overflow da .tab-bar),
   // calculamos top/left a partir do botão em runtime.
+  // Além disso, PORTALIZAMOS o menu para document.body ao abrir: isso garante
+  // que o z-index:10000 escape de qualquer stacking context ancestral
+  // (ex: .tab-bar position:relative, backdrop-filter em cards, etc.).
   if(open && toggle && menu){
+    if(menu.parentElement !== document.body){
+      // Marca o parent original para poder devolver ao fechar
+      menu._origParent = menu.parentElement;
+      document.body.appendChild(menu);
+    }
+    menu.classList.add('is-open');
     const r = toggle.getBoundingClientRect();
     menu.style.top  = r.bottom + 'px';
     menu.style.left = r.left   + 'px';
+  } else if(!open && menu){
+    menu.classList.remove('is-open');
+    // Devolve o menu ao parent original para manter a estrutura do DOM
+    if(menu._origParent && menu.parentElement === document.body){
+      menu._origParent.appendChild(menu);
+    }
   }
 }
 function closeEmpDropdown(){
@@ -2874,13 +2890,25 @@ function closeEmpDropdown(){
   dd.classList.remove('open');
   const toggle = dd.querySelector('.tab-dropdown-toggle');
   if(toggle) toggle.setAttribute('aria-expanded', 'false');
+  // Devolve o menu portalizado ao parent original e esconde
+  const menu = document.getElementById('emp-dropdown-menu');
+  if(menu){
+    menu.classList.remove('is-open');
+    if(menu._origParent && menu.parentElement === document.body){
+      menu._origParent.appendChild(menu);
+    }
+  }
 }
 function pickEmp(code){
   showTab(code, null);
 }
 document.addEventListener('click', (e)=>{
   const dd = document.getElementById('tab-dropdown-emp');
-  if(dd && !dd.contains(e.target)) closeEmpDropdown();
+  const menu = document.getElementById('emp-dropdown-menu');
+  // Com o menu portalizado para body, precisamos checar tanto o dd quanto o menu
+  if(dd && !dd.contains(e.target) && (!menu || !menu.contains(e.target))){
+    closeEmpDropdown();
+  }
 });
 
 // Garantia extra: popula o dropdown em vários momentos para cobrir todos os
