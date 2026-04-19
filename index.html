@@ -20,67 +20,17 @@
   --ease:cubic-bezier(.4,0,.2,1);
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{
-  font-family:'DM Sans',sans-serif;
-  background:
-    radial-gradient(1200px 900px at 10% -10%, rgba(46,184,110,.08), transparent 60%),
-    radial-gradient(900px 700px at 100% 15%, rgba(184,144,10,.06), transparent 55%),
-    radial-gradient(800px 600px at 80% 100%, rgba(46,184,110,.05), transparent 60%),
-    linear-gradient(180deg, #eef0ec 0%, #f5f5f3 60%, #eef0ec 100%);
-  background-attachment: fixed;
-  color:var(--text);min-height:100vh;font-size:13px;overflow-x:hidden;
-  position:relative;
-}
-/* "Orbs" decorativos de fundo — dão algo para o backdrop-filter borrar.
-   pointer-events:none garante que não interferem com cliques. */
-body::before,
-body::after{
-  content:'';position:fixed;pointer-events:none;z-index:0;
-  border-radius:50%;filter:blur(80px);opacity:.55;
-}
-body::before{
-  width:520px;height:520px;top:-120px;left:-140px;
-  background:radial-gradient(circle, rgba(46,184,110,.35), transparent 70%);
-}
-body::after{
-  width:460px;height:460px;bottom:-140px;right:-120px;
-  background:radial-gradient(circle, rgba(184,144,10,.28), transparent 70%);
-}
-/* Garante que todo o conteúdo fique acima dos orbs */
-header, .tab-bar, .wrap, main, .page, .footer, #bottom-nav{position:relative;z-index:1}
+body{font-family:'DM Sans',sans-serif;background:#f5f5f3;color:var(--text);min-height:100vh;font-size:13px;overflow-x:hidden}
 
 /* ─── HEADER ─── */
-header{
-  background:rgba(13,13,13,.75);
-  -webkit-backdrop-filter:blur(20px) saturate(140%);
-  backdrop-filter:blur(20px) saturate(140%);
-  height:58px;display:flex;align-items:center;justify-content:space-between;
-  padding:0 28px;position:sticky;top:0;z-index:200;
-  border-bottom:2.5px solid var(--green);
-  box-shadow:0 1px 0 rgba(255,255,255,.08) inset;
-}
-@supports not (backdrop-filter: blur(1px)){
-  header{background:var(--black)}
-}
+header{background:var(--black);height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:200;border-bottom:2.5px solid var(--green)}
 .logo-wrap img{height:38px;width:auto;display:block;filter:invert(1) brightness(2);transition:opacity .2s var(--ease)}
 .logo-wrap img:hover{opacity:.8}
 .hdr-title{font-size:15px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#fff;position:absolute;left:50%;transform:translateX(-50%);white-space:nowrap}
 .hdr-right{display:flex;align-items:center;gap:10px;min-width:38px}
 
 /* ─── TABS ─── */
-.tab-bar{
-  background:rgba(24,24,24,.72);
-  -webkit-backdrop-filter:blur(20px) saturate(140%);
-  backdrop-filter:blur(20px) saturate(140%);
-  display:flex;align-items:stretch;padding:0 28px;
-  overflow-x:auto;scrollbar-width:none;
-  border-bottom:1px solid rgba(255,255,255,.06);
-  box-shadow:0 1px 0 rgba(255,255,255,.05) inset;
-  position:relative;
-}
-@supports not (backdrop-filter: blur(1px)){
-  .tab-bar{background:var(--dark)}
-}
+.tab-bar{background:var(--dark);display:flex;align-items:stretch;padding:0 28px;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid #2a2a2a;position:relative}
 .tab-bar::-webkit-scrollbar{display:none}
 .tab-btn{background:transparent;border:none;border-bottom:3px solid transparent;color:var(--gray-400);font-family:'DM Sans',sans-serif;font-size:10.5px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;padding:0 14px;height:40px;cursor:pointer;transition:color .2s var(--ease),border-color .2s var(--ease),background .2s var(--ease);white-space:nowrap;position:relative}
 .tab-btn:hover{color:#fff;background:rgba(255,255,255,.04)}
@@ -126,24 +76,7 @@ header{
 
 /* ─── KPI CARDS ─── */
 .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:12px;margin-bottom:22px}
-.kpi-card{
-  background:rgba(255,255,255,.55);
-  -webkit-backdrop-filter:blur(18px) saturate(160%);
-  backdrop-filter:blur(18px) saturate(160%);
-  border-radius:14px;padding:16px 15px 13px;
-  box-shadow:
-    0 1px 0 rgba(255,255,255,.6) inset,      /* reflexo topo (liquid glass) */
-    0 8px 24px rgba(13,13,13,.08),            /* sombra externa suave */
-    0 0 0 1px rgba(255,255,255,.4) inset;     /* borda interna clara */
-  border:1px solid rgba(255,255,255,.35);
-  position:relative;overflow:hidden;
-  transition:box-shadow .25s var(--ease),transform .25s var(--ease),background .25s var(--ease);
-  cursor:default;opacity:0;transform:translateY(16px);
-}
-/* Fallback para browsers sem backdrop-filter */
-@supports not (backdrop-filter: blur(1px)){
-  .kpi-card{background:rgba(255,255,255,.92)}
-}
+.kpi-card{background:#fff;border-radius:10px;padding:16px 15px 13px;box-shadow:var(--shadow);border:1px solid rgba(0,0,0,.07);position:relative;overflow:hidden;transition:box-shadow .25s var(--ease),transform .25s var(--ease);cursor:default;opacity:0;transform:translateY(16px)}
 .kpi-card.anim{opacity:1;transform:translateY(0)}
 .kpi-card:hover{box-shadow:var(--shadowH);transform:translateY(-3px)}
 .kpi-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;border-radius:0 0 10px 10px;transform:scaleX(0);transform-origin:left;transition:transform .3s var(--ease)}
@@ -158,22 +91,7 @@ header{
 /* ─── CHART GRID ─── */
 .c2{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:22px}
 @media(max-width:1100px){.c2{grid-template-columns:1fr}}
-.chart-card{
-  background:rgba(255,255,255,.55);
-  -webkit-backdrop-filter:blur(18px) saturate(160%);
-  backdrop-filter:blur(18px) saturate(160%);
-  border-radius:14px;padding:16px;
-  box-shadow:
-    0 1px 0 rgba(255,255,255,.6) inset,
-    0 10px 30px rgba(13,13,13,.08),
-    0 0 0 1px rgba(255,255,255,.4) inset;
-  border:1px solid rgba(255,255,255,.35);
-  opacity:0;transform:translateY(16px);
-  transition:opacity .4s var(--ease),transform .4s var(--ease),box-shadow .25s var(--ease);
-}
-@supports not (backdrop-filter: blur(1px)){
-  .chart-card{background:rgba(255,255,255,.92)}
-}
+.chart-card{background:#fff;border-radius:10px;padding:16px;box-shadow:var(--shadow);border:1px solid rgba(0,0,0,.07);opacity:0;transform:translateY(16px);transition:opacity .4s var(--ease),transform .4s var(--ease),box-shadow .25s var(--ease)}
 .chart-card.anim{opacity:1;transform:translateY(0)}
 .chart-card:hover{box-shadow:var(--shadowH)}
 .chart-head{font-size:10.5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text);margin-bottom:3px}
@@ -182,61 +100,14 @@ header{
 
 /* ─── GAUGE CARDS ─── */
 .grow{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:14px;margin-bottom:22px}
-.gcrd{
-  background:rgba(255,255,255,.55);
-  -webkit-backdrop-filter:blur(16px) saturate(160%);
-  backdrop-filter:blur(16px) saturate(160%);
-  border-radius:14px;padding:16px 12px 13px;
-  box-shadow:
-    0 1px 0 rgba(255,255,255,.6) inset,
-    0 8px 24px rgba(13,13,13,.08),
-    0 0 0 1px rgba(255,255,255,.4) inset;
-  border:1px solid rgba(255,255,255,.35);
-  text-align:center;
-  transition:box-shadow .25s var(--ease),transform .25s var(--ease);
-  opacity:0;transform:translateY(16px);
-}
-@supports not (backdrop-filter: blur(1px)){
-  .gcrd{background:rgba(255,255,255,.92)}
-}
+.gcrd{background:#fff;border-radius:10px;padding:16px 12px 13px;box-shadow:var(--shadow-card);border:1px solid rgba(0,0,0,.08);text-align:center;transition:box-shadow .25s var(--ease),transform .25s var(--ease);opacity:0;transform:translateY(16px)}
 .gcrd.anim{opacity:1;transform:translateY(0)}
 .gcrd:hover{box-shadow:var(--shadowH);transform:translateY(-3px)}
 .gemp{font-size:9.5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--gray-600);margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--gray-100)}
 .gsub{font-size:9.5px;color:var(--gray-600);margin-top:6px;line-height:1.5;padding-top:6px;border-top:1px solid var(--gray-100)}
 
 /* ─── DVT CARD ─── */
-.dvt-card{
-  background:rgba(255,255,255,.55);
-  -webkit-backdrop-filter:blur(18px) saturate(160%);
-  backdrop-filter:blur(18px) saturate(160%);
-  border-radius:14px;
-  box-shadow:
-    0 1px 0 rgba(255,255,255,.6) inset,
-    0 10px 30px rgba(13,13,13,.08),
-    0 0 0 1px rgba(255,255,255,.4) inset;
-  border:1px solid rgba(255,255,255,.35);
-  overflow:hidden;margin-bottom:20px;
-  opacity:0;transform:translateY(16px);
-  transition:opacity .4s var(--ease),transform .4s var(--ease);
-}
-@supports not (backdrop-filter: blur(1px)){
-  .dvt-card{background:rgba(255,255,255,.92)}
-}
-
-/* ── Liquid glass: reflexo refrativo no topo dos cards principais ──
-   Gradiente claro linear na borda superior simula curvatura do vidro.
-   Aplicado via pseudo-elemento para não interferir com conteúdo. */
-.kpi-card::before,
-.chart-card::before,
-.gcrd::before,
-.dvt-card::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:40%;
-  background:linear-gradient(180deg, rgba(255,255,255,.5) 0%, rgba(255,255,255,0) 100%);
-  pointer-events:none;border-radius:14px 14px 0 0;z-index:0;
-}
-/* Garante que o conteúdo fique acima do reflexo */
-.kpi-card > *,.chart-card > *,.gcrd > *,.dvt-card > *{position:relative;z-index:1}
-.chart-card,.gcrd,.dvt-card{position:relative}
+.dvt-card{background:#fff;border-radius:10px;box-shadow:var(--shadow);border:1px solid rgba(0,0,0,.07);overflow:hidden;margin-bottom:20px;opacity:0;transform:translateY(16px);transition:opacity .4s var(--ease),transform .4s var(--ease)}
 .dvt-card.anim{opacity:1;transform:translateY(0)}
 .dvt-hdr{background:var(--black);padding:11px 16px;display:flex;align-items:center;gap:10px;border-bottom:2px solid var(--red)}
 .dvt-ht{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gray-400)}
@@ -491,26 +362,9 @@ td:last-child{border-right:none}
 /* ── Empreendimento Modal ── */
 .emp-card-click{transition:transform .2s var(--ease),box-shadow .2s var(--ease)}
 .emp-card-click:hover{transform:translateY(-4px);box-shadow:0 10px 30px rgba(0,0,0,.15)}
-.emp-modal-overlay{position:fixed;inset:0;background:rgba(13,13,13,.45);backdrop-filter:blur(14px) saturate(120%);-webkit-backdrop-filter:blur(14px) saturate(120%);z-index:9000;display:none;align-items:center;justify-content:center;padding:30px;opacity:0;transition:opacity .25s var(--ease)}
+.emp-modal-overlay{position:fixed;inset:0;background:rgba(13,13,13,.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:9000;display:none;align-items:center;justify-content:center;padding:30px;opacity:0;transition:opacity .25s var(--ease)}
 .emp-modal-overlay.show{display:flex;opacity:1}
-.emp-modal{
-  background:rgba(255,255,255,.75);
-  -webkit-backdrop-filter:blur(24px) saturate(170%);
-  backdrop-filter:blur(24px) saturate(170%);
-  border:1px solid rgba(255,255,255,.4);
-  border-radius:18px;
-  box-shadow:
-    0 1px 0 rgba(255,255,255,.8) inset,
-    0 30px 80px rgba(0,0,0,.35),
-    0 0 0 1px rgba(255,255,255,.35) inset;
-  max-width:1200px;width:100%;max-height:90vh;display:flex;overflow:hidden;
-  transform:scale(.96);transition:transform .25s var(--ease);
-}
-@supports not (backdrop-filter: blur(1px)){
-  .emp-modal{background:#fff}
-}
-.emp-modal-overlay.show{display:flex;opacity:1}
-
+.emp-modal{background:#fff;border-radius:14px;box-shadow:0 30px 80px rgba(0,0,0,.4);max-width:1200px;width:100%;max-height:90vh;display:flex;overflow:hidden;transform:scale(.96);transition:transform .25s var(--ease)}
 .emp-modal-overlay.show .emp-modal{transform:scale(1)}
 .emp-modal-left{width:300px;flex-shrink:0;background:var(--black);color:#fff;padding:26px 22px;display:flex;flex-direction:column;gap:18px;overflow-y:auto}
 .emp-modal-right{flex:1;display:flex;flex-direction:column;overflow:hidden}
@@ -1013,17 +867,10 @@ html,body{max-width:100vw;overflow-x:hidden}
   /* Bottom nav */
   #bottom-nav{
     display:flex;position:fixed;bottom:0;left:0;right:0;z-index:300;
-    background:rgba(13,13,13,.75);
-    -webkit-backdrop-filter:blur(20px) saturate(140%);
-    backdrop-filter:blur(20px) saturate(140%);
-    border-top:1px solid rgba(255,255,255,.08);
-    box-shadow:0 1px 0 rgba(255,255,255,.08) inset, 0 -4px 20px rgba(0,0,0,.2);
+    background:var(--black);border-top:1px solid #2a2a2a;
     padding:0 0 env(safe-area-inset-bottom,0px);
     height:calc(52px + env(safe-area-inset-bottom,0px));
     align-items:stretch;
-  }
-  @supports not (backdrop-filter: blur(1px)){
-    #bottom-nav{background:var(--black)}
   }
   .bnav-btn{
     flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
