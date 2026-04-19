@@ -35,6 +35,28 @@ header{background:var(--black);height:58px;display:flex;align-items:center;justi
 .tab-btn:hover{color:#fff;background:rgba(255,255,255,.04)}
 .tab-btn.active{color:var(--green);border-bottom-color:var(--green)}
 .tab-btn.dtab.active{color:var(--yellow);border-bottom-color:var(--yellow)}
+
+/* ── Dropdown de empreendimentos na tab-bar ── */
+.tab-dropdown{position:relative;display:inline-block}
+.tab-dropdown-toggle{display:inline-flex;align-items:center;gap:6px}
+.tab-dd-caret{transition:transform .2s var(--ease);opacity:.7}
+.tab-dropdown.open .tab-dd-caret{transform:rotate(180deg)}
+.tab-dropdown-menu{
+  position:absolute;top:100%;left:0;min-width:210px;
+  background:var(--dark);border:1px solid #2a2a2a;border-top:none;
+  border-radius:0 0 8px 8px;box-shadow:0 8px 28px rgba(0,0,0,.35);
+  display:none;z-index:1000;padding:4px 0;
+}
+.tab-dropdown.open .tab-dropdown-menu{display:block}
+.tab-dropdown-item{
+  display:block;width:100%;text-align:left;background:transparent;border:none;
+  color:var(--gray-400);font-family:'DM Sans',sans-serif;font-size:11px;
+  font-weight:600;letter-spacing:1px;text-transform:uppercase;
+  padding:10px 16px;cursor:pointer;transition:color .15s,background .15s;
+  white-space:nowrap;
+}
+.tab-dropdown-item:hover{color:#fff;background:rgba(255,255,255,.05)}
+.tab-dropdown-item.active{color:var(--green);background:rgba(46,184,110,.08)}
 /* tab ripple */
 .tab-btn::after{content:'';position:absolute;inset:0;background:rgba(255,255,255,.06);opacity:0;transition:opacity .15s}
 .tab-btn:active::after{opacity:1}
@@ -985,12 +1007,18 @@ setTimeout(()=>{ const u=document.getElementById('login-user'); if(u && !u.disab
 
 <div class="tab-bar" role="tablist" aria-label="Navegação principal">
   <button type="button" role="tab" class="tab-btn dtab active" onclick="showTab('dash',this)">Dashboard</button>
-  <button type="button" role="tab" class="tab-btn" onclick="showTab('RIV',this)">Riviera</button>
-  <button type="button" role="tab" class="tab-btn" onclick="showTab('CTM',this)">Costamare</button>
-  <button type="button" role="tab" class="tab-btn" onclick="showTab('EXT',this)">Exclusive Tianguá</button>
-  <button type="button" role="tab" class="tab-btn" onclick="showTab('KEN',this)">Kennedy</button>
-  <button type="button" role="tab" class="tab-btn" onclick="showTab('MLU',this)">Marcos Luciano</button>
-  <button type="button" role="tab" class="tab-btn" onclick="showTab('JBR',this)">Jane Broder</button>
+
+  <!-- Dropdown compilando empreendimentos individuais (desktop) -->
+  <div class="tab-dropdown" id="tab-dropdown-emp">
+    <button type="button" class="tab-btn tab-dropdown-toggle" onclick="toggleEmpDropdown(event)" aria-haspopup="true" aria-expanded="false">
+      Empreendimentos
+      <svg class="tab-dd-caret" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+    <div class="tab-dropdown-menu" id="emp-dropdown-menu" role="menu">
+      <!-- Items gerados dinamicamente via initEmpDropdown() -->
+    </div>
+  </div>
+
   <button type="button" role="tab" class="tab-btn" onclick="showTab('GE',this)">Gestão Emp.</button>
   <button type="button" role="tab" class="tab-btn" onclick="showTab('DVT',this)">Acomp. DVT</button>
   <button type="button" role="tab" class="tab-btn" onclick="showTab('NN',this)">Acomp. NN</button>
@@ -1062,63 +1090,69 @@ setTimeout(()=>{ const u=document.getElementById('login-user'); if(u && !u.disab
   <div class="emp-modal" id="empModalInner"></div>
 </div>
 
-<!-- BOTTOM NAV (mobile) -->
+<!-- BOTTOM NAV (mobile) — versão simplificada: só Dashboard, Acomp. NN e Contratos.
+     Abas de empreendimentos individuais ficam apenas no desktop, via dropdown. -->
 <nav id="bottom-nav" aria-label="Navegação principal mobile">
   <button type="button" class="bnav-btn active" data-tab="dash" onclick="bnavGo('dash',this)">
     <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
     Dashboard
   </button>
-  <button type="button" class="bnav-btn" data-tab="RIV" onclick="bnavGo('RIV',this)">
-    <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-    Riviera
-  </button>
-  <button type="button" class="bnav-btn" data-tab="CTM" onclick="bnavGo('CTM',this)">
-    <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-    Costamare
+  <button type="button" class="bnav-btn" data-tab="NN" onclick="bnavGo('NN',this)">
+    <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+    Acomp. NN
   </button>
   <button type="button" class="bnav-btn" data-tab="CTR" onclick="bnavGo('CTR',this)">
     <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
     Contratos
   </button>
-  <button type="button" class="bnav-btn" id="bnav-more-btn" onclick="toggleBnavMore()">
-    <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
-    Mais
-  </button>
 </nav>
-<div class="bnav-more-menu" id="bnav-more-menu">
-  <button type="button" class="bnav-more-item" onclick="bnavGo('EXT',null);toggleBnavMore()">Exclusive Tianguá</button>
-  <button type="button" class="bnav-more-item" onclick="bnavGo('KEN',null);toggleBnavMore()">Kennedy</button>
-  <button type="button" class="bnav-more-item" onclick="bnavGo('MLU',null);toggleBnavMore()">Marcos Luciano</button>
-  <button type="button" class="bnav-more-item" onclick="bnavGo('JBR',null);toggleBnavMore()">Jane Broder</button>
-  <button type="button" class="bnav-more-item" onclick="bnavGo('GE',null);toggleBnavMore()">Gestão Emp.</button>
-  <button type="button" class="bnav-more-item" onclick="bnavGo('DVT',null);toggleBnavMore()">Acomp. DVT</button>
-  <button type="button" class="bnav-more-item" onclick="bnavGo('NN',null);toggleBnavMore()">Acomp. NN</button>
-</div>
 
 <div class="footer">CONVIVER URBANISMO — SISTEMA DE ACOMPANHAMENTO DE PROJETOS &nbsp;|&nbsp; <span id="fdate"></span></div>
 
 <script>
-let D = {RIV:{name:"RIVIERA",rows:[]},CTM:{name:"COSTAMARE",rows:[]},EXT:{name:"EXCLUSIVE TIANGUA",rows:[]},KEN:{name:"KENNEDY",rows:[]},MLU:{name:"MARCOS LUCIANO",rows:[]},JBR:{name:"JANE BRODER",rows:[]},GE:{name:"GESTÃO DE EMPREENDIMENTOS",rows:[]},DVT:[]};
-
 // ════════════════════════════════════════════════════════
 // GOOGLE SHEETS LOADER (gviz JSON endpoint)
 // ════════════════════════════════════════════════════════
 const SHEETS_ID = "1kRARELSkAE8-d5eLJm0cEe9ENfbPZTU3fZ4YIvEfBzU";
-const SHEETS_TABS = {
-  RIV: "RIV", CTM: "CTM", EXT: "EXT",
-  KEN: "KEN", MLU: "MLU", JBR: "JBR", GE: "GE",
-  DVT: "ACOMPANHAMENTO DVT"
-};
+// ── REGISTRO CENTRAL DE EMPREENDIMENTOS ──
+// Para adicionar um novo empreendimento à planilha: inclua um item abaixo.
+// O código vai gerar automaticamente: EK, SHEETS_TABS, EMP_NAMES, PR_TABS.
+// Campos:
+//   code: chave curta de 3 letras (usada internamente)
+//   name: nome de exibição (aparece nas abas, cards, modais)
+//   sheetTab: nome EXATO da aba na planilha Google Sheets
+//   logo: (opcional) data URL base64 do logo; se omitido usa placeholder
+const EMPREENDIMENTOS = [
+  { code:'RIV', name:'RIVIERA',           sheetTab:'RIV' },
+  { code:'CTM', name:'COSTAMARE',         sheetTab:'CTM' },
+  { code:'EXT', name:'EXCLUSIVE TIANGUA', sheetTab:'EXT' },
+  { code:'KEN', name:'KENNEDY',           sheetTab:'KEN' },
+  { code:'MLU', name:'MARCOS LUCIANO',    sheetTab:'MLU' },
+  { code:'JBR', name:'JANE BRODER',       sheetTab:'JBR' },
+  { code:'IGT', name:'IGUATU',            sheetTab:'IGU' },
+];
+
+const SHEETS_TABS = Object.fromEntries([
+  ...EMPREENDIMENTOS.map(e => [e.code, e.sheetTab]),
+  ['GE', 'GE'],
+  ['DVT', 'ACOMPANHAMENTO DVT'],
+]);
 // Abas de pranchas por empreendimento (RIV_PR, CTM_PR, etc.)
-const PR_TABS = {
-  RIV: "RIV_PR", CTM: "CTM_PR", EXT: "EXT_PR",
-  KEN: "KEN_PR", MLU: "MLU_PR", JBR: "JBR_PR"
-};
-const EMP_NAMES = {
-  RIV:"RIVIERA", CTM:"COSTAMARE", EXT:"EXCLUSIVE TIANGUA",
-  KEN:"KENNEDY", MLU:"MARCOS LUCIANO", JBR:"JANE BRODER",
-  GE:"GESTÃO DE EMPREENDIMENTOS"
-};
+const PR_TABS = Object.fromEntries(
+  EMPREENDIMENTOS.map(e => [e.code, e.sheetTab + '_PR'])
+);
+const EMP_NAMES = Object.fromEntries([
+  ...EMPREENDIMENTOS.map(e => [e.code, e.name]),
+  ['GE', 'GESTÃO DE EMPREENDIMENTOS'],
+]);
+
+let D = (() => {
+  const d = {};
+  EMPREENDIMENTOS.forEach(e => d[e.code] = {name: e.name, rows: []});
+  d.GE = {name: "GESTÃO DE EMPREENDIMENTOS", rows: []};
+  d.DVT = [];
+  return d;
+})();
 
 
 // ── CONTRATOS (planilha separada) ──
@@ -1802,7 +1836,7 @@ function countST(rows){
   return{c,a,n,tot};
 }
 
-const EK=['RIV','CTM','EXT','KEN','MLU','JBR'];
+const EK = EMPREENDIMENTOS.map(e => e.code);
 
 // ── ANIMATED COUNTER ──
 function animCount(el,target,duration=1200){
@@ -2553,12 +2587,22 @@ function showTab(id,btn){
   const pages=document.querySelectorAll('.page');
   pages.forEach(p=>{p.classList.remove('active','visible');});
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-dropdown-item').forEach(b=>b.classList.remove('active'));
 
   const target=document.getElementById('page-'+id);
+  if(!target) return;
   target.classList.add('active');
-  btn.classList.add('active');
+  if(btn) btn.classList.add('active');
 
-  // trigger animation on next frame
+  // Se o alvo é um empreendimento, marca o toggle do dropdown e o item
+  if(typeof EMPREENDIMENTOS !== 'undefined' && EMPREENDIMENTOS.some(e => e.code === id)){
+    const toggle = document.querySelector('#tab-dropdown-emp .tab-dropdown-toggle');
+    if(toggle) toggle.classList.add('active');
+    const item = document.querySelector(`.tab-dropdown-item[data-code="${id}"]`);
+    if(item) item.classList.add('active');
+  }
+  closeEmpDropdown();
+
   requestAnimationFrame(()=>{
     requestAnimationFrame(()=>{
       target.classList.add('visible');
@@ -2566,6 +2610,37 @@ function showTab(id,btn){
     });
   });
 }
+
+// ── Empreendimentos dropdown (desktop) ──
+function initEmpDropdown(){
+  const menu = document.getElementById('emp-dropdown-menu');
+  if(!menu) return;
+  menu.innerHTML = EMPREENDIMENTOS.map(e =>
+    `<button type="button" class="tab-dropdown-item" data-code="${e.code}" onclick="pickEmp('${e.code}')">${e.name}</button>`
+  ).join('');
+}
+function toggleEmpDropdown(ev){
+  if(ev) ev.stopPropagation();
+  const dd = document.getElementById('tab-dropdown-emp');
+  if(!dd) return;
+  const open = dd.classList.toggle('open');
+  const toggle = dd.querySelector('.tab-dropdown-toggle');
+  if(toggle) toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+function closeEmpDropdown(){
+  const dd = document.getElementById('tab-dropdown-emp');
+  if(!dd) return;
+  dd.classList.remove('open');
+  const toggle = dd.querySelector('.tab-dropdown-toggle');
+  if(toggle) toggle.setAttribute('aria-expanded', 'false');
+}
+function pickEmp(code){
+  showTab(code, null);
+}
+document.addEventListener('click', (e)=>{
+  const dd = document.getElementById('tab-dropdown-emp');
+  if(dd && !dd.contains(e.target)) closeEmpDropdown();
+});
 
 // ── TOOLTIP on obs cells (hover) ──
 function setupTooltips(){
@@ -3641,6 +3716,9 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   const now=new Date();
   const fd = document.getElementById('fdate');
   if(fd) fd.textContent = now.toLocaleDateString('pt-BR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+  // Popula dropdown de empreendimentos a partir do registro central
+  initEmpDropdown();
 
   // Load data from Google Sheets and render everything
   await reloadAllFromSheets(false);
