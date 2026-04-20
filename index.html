@@ -739,9 +739,12 @@ html,body{max-width:100vw;overflow-x:hidden}
 }
 
 /* ─── MOBILE: abaixo de 768px ─── */
-/* ── Contratos: cards mobile (escondidos no desktop por padrão) ── */
-.ctr-mobile-only{display:none !important}
-.ctr-cards-list{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+/* Cards de contratos agora são a visualização unificada (desktop + mobile).
+   As classes ctr-desktop-only e ctr-mobile-only ficam como no-op para retrocompatibilidade. */
+.ctr-mobile-only{display:block}
+.ctr-desktop-only{display:none !important}
+.ctr-cards-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:8px}
+@media (max-width:640px){ .ctr-cards-list{grid-template-columns:1fr} }
 .ctr-card{background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:10px;padding:12px 13px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:6px}
 .ctr-card-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .ctr-card-cod{font-family:monospace;font-size:11px;font-weight:700;color:#222;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -754,6 +757,29 @@ html,body{max-width:100vw;overflow-x:hidden}
 .ctr-card-vals>div{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
 .ctr-card-l{font-size:8.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:#999}
 .ctr-card-v{font-family:monospace;font-size:11px;font-weight:600;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ── Barra de marcos de pagamento pagos ──
+   Cada segmento é um marco pago; largura = % em relação ao valor total do contrato.
+   A barra não precisa somar 100% (total de marcos é desconhecido). */
+.ctr-card-marcos{margin-top:4px;padding-top:8px;border-top:1px solid #eee}
+.ctr-card-marcos-hdr{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.ctr-card-marcos-ttl{font-size:8.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:#999}
+.ctr-card-marcos-sum{font-size:10px;color:#1a8a4a;font-weight:700;font-family:monospace}
+.ctr-marcos-bar{display:flex;height:18px;border-radius:4px;overflow:hidden;background:#f0f0ed;box-shadow:inset 0 1px 2px rgba(0,0,0,.04)}
+.ctr-marco-seg{
+  background:#2eb86e;height:100%;
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:9px;font-weight:700;
+  text-shadow:0 1px 2px rgba(0,0,0,.25);
+  border-right:1px solid rgba(255,255,255,.35);
+  transition:filter .15s;
+  cursor:default;
+  overflow:hidden;white-space:nowrap;
+}
+.ctr-marco-seg:last-child{border-right:none}
+.ctr-marco-seg:hover{filter:brightness(1.1)}
+.ctr-marco-seg.alt{background:#26a35f}
+.ctr-marcos-empty{font-size:10px;color:#aaa;font-style:italic;text-align:center;padding:4px 0}
 
 @media (max-width: 768px){
   html,body{width:100%;max-width:100vw;overflow-x:hidden}
@@ -794,10 +820,6 @@ html,body{max-width:100vw;overflow-x:hidden}
      Disciplina e Status. Última Validade e Observação ficam ocultas. */
   .dvt-dash-table .dvt-c-val,
   .dvt-dash-table .dvt-c-obs{display:none !important}
-
-  /* Tabela de Contratos vira lista de cards no mobile */
-  .ctr-desktop-only{display:none !important}
-  .ctr-mobile-only{display:block !important}
 
   /* Header do site respeitando safe-area (notch / barra Safari) */
   header{
@@ -1419,6 +1441,67 @@ function parseContractsSheet(gviz){
     dataStartIdx = 4; // skip rows 1-4 (title + headers)
   }
 
+  // ── DETECÇÃO DE MARCOS DE PAGAMENTO ──
+  // A partir da coluna O (índice >= 14, logo após "saldo"), a planilha tem pares
+  // (Valor, Data), (Valor, Data), ... cada par representando um Marco.
+  // Cabeçalho mesclado "Marco N" aparece acima. A detecção procura por cabeçalhos
+  // contendo "marco" nas colunas ímpares (valor); o par seguinte é a data.
+  //
+  // Fallback: se detecção falhar, assumimos que TODAS as colunas após "saldo" são
+  // pares alternados valor/data.
+  const saldoIdx = idxMap.saldo != null ? idxMap.saldo : 13;
+  const firstMarcoIdx = saldoIdx + 1;
+  const marcoPairs = []; // Array de { n, valorIdx, dataIdx, label }
+
+  // Estratégia 1: procurar cabeçalhos "marco" nas linhas anteriores a dataStartIdx
+  // ou na própria linha de headers detectada.
+  const headerRowsToScan = [];
+  if(dataStartIdx > 0){
+    for(let hr = Math.max(0, dataStartIdx - 3); hr < dataStartIdx; hr++){
+      headerRowsToScan.push(hr);
+    }
+  }
+  // Também consideramos cols[].label
+  const colsLabels = cols.map(c => c?.label || "");
+
+  const extractLabel = (ci) => {
+    // Tenta em várias fontes: cols[].label, depois linhas de cabeçalho
+    if(colsLabels[ci]) return colsLabels[ci];
+    for(const hr of headerRowsToScan){
+      const cell = rows[hr]?.c?.[ci];
+      if(cell){
+        const v = cell.f != null ? cell.f : cell.v;
+        if(v != null && String(v).trim()) return String(v);
+      }
+    }
+    return "";
+  };
+
+  let marcoN = 0;
+  let ci = firstMarcoIdx;
+  while(ci < cols.length){
+    const label = norm(extractLabel(ci));
+    if(label.includes("marco") || label.includes("medicao") || label.includes("parcela")){
+      // Encontrou um marco explícito
+      marcoN++;
+      const m = label.match(/\d+/);
+      const numero = m ? parseInt(m[0],10) : marcoN;
+      marcoPairs.push({n: numero, valorIdx: ci, dataIdx: ci + 1, label: extractLabel(ci) || `Marco ${numero}`});
+      ci += 2; // pula valor + data
+    } else {
+      ci++;
+    }
+  }
+
+  // Fallback: nenhum marco detectado explicitamente → assumir pares a partir de firstMarcoIdx
+  if(marcoPairs.length === 0 && cols.length > firstMarcoIdx){
+    for(let i = firstMarcoIdx, n = 1; i < cols.length - 1; i += 2, n++){
+      marcoPairs.push({n: n, valorIdx: i, dataIdx: i + 1, label: `Marco ${n}`});
+    }
+  }
+
+  console.log(`[MEDIÇÕES] ${marcoPairs.length} marcos detectados:`, marcoPairs.map(m => `${m.label}@col${m.valorIdx}`));
+
   const out = [];
   for(let r=dataStartIdx; r<rows.length; r++){
     const cells = rows[r]?.c || [];
@@ -1455,6 +1538,22 @@ function parseContractsSheet(gviz){
     if(!saldo && valor_total) saldo = valor_total - pago;
     if(!pct && valor_total) pct = pago / valor_total;
 
+    // Extrair marcos pagos da linha (só os com valor > 0)
+    const marcos = [];
+    for(const mp of marcoPairs){
+      const valorCell = cells[mp.valorIdx];
+      const dataCell = cells[mp.dataIdx];
+      if(!valorCell) continue;
+      const valor = _parseNum(valorCell);
+      if(!valor || valor <= 0) continue; // marco não pago
+      let dataStr = "";
+      if(dataCell){
+        const dv = dataCell.f != null ? dataCell.f : dataCell.v;
+        if(dv != null && String(dv).trim()) dataStr = String(dv).trim();
+      }
+      marcos.push({n: mp.n, label: mp.label, valor: valor, data: dataStr});
+    }
+
     out.push({
       tipo: tipo,
       cod: cod,
@@ -1468,7 +1567,8 @@ function parseContractsSheet(gviz){
       budget:      _parseNum(get("budget")),
       pago:        pago,
       pct:         pct,
-      saldo:       saldo
+      saldo:       saldo,
+      marcos:      marcos
     });
   }
   console.log(`[MEDIÇÕES] Parseados ${out.length} contratos`);
@@ -3200,6 +3300,42 @@ function buildContracts(){
     const tipoCol=r.tipo==='EDIFICAÇÕES'?'#1a8a4a':'#8a6a00';
     const tipoBg=r.tipo==='EDIFICAÇÕES'?'rgba(46,184,110,.1)':'rgba(184,144,10,.1)';
     const pctBg=pct>=80?'rgba(46,184,110,.12)':pct>=50?'rgba(184,144,10,.12)':'rgba(150,150,150,.1)';
+
+    // ── Barra de marcos pagos ──
+    // Cada segmento = um marco pago; largura proporcional ao valor_total do contrato.
+    // Se valor_total for 0 ou não houver marcos, seção fica com mensagem discreta.
+    const marcos = Array.isArray(r.marcos) ? r.marcos : [];
+    let marcosHtml = '';
+    if(marcos.length > 0 && r.valor_total > 0){
+      const somaMarcos = marcos.reduce((s,m)=>s+m.valor,0);
+      const pctSoma = Math.round(somaMarcos / r.valor_total * 100);
+      const segs = marcos.map((m,mi)=>{
+        const segPct = (m.valor / r.valor_total) * 100;
+        const segPctRound = Math.round(segPct);
+        const dataTxt = m.data ? ` — ${m.data}` : '';
+        const tooltip = `${m.label}: ${fmtBRL(m.valor)} (${segPctRound}%)${dataTxt}`;
+        // Só mostra o label do marco dentro do segmento se couber (>= 6%)
+        const innerTxt = segPct >= 6 ? `${segPctRound}%` : '';
+        return `<div class="ctr-marco-seg ${mi%2?'alt':''}" style="width:${segPct}%" title="${tooltip.replace(/"/g,'&quot;')}">${innerTxt}</div>`;
+      }).join('');
+      marcosHtml = `<div class="ctr-card-marcos">
+        <div class="ctr-card-marcos-hdr">
+          <span class="ctr-card-marcos-ttl">Marcos Pagos (${marcos.length})</span>
+          <span class="ctr-card-marcos-sum">${fmtBRL(somaMarcos)} · ${pctSoma}%</span>
+        </div>
+        <div class="ctr-marcos-bar">${segs}</div>
+      </div>`;
+    } else if(marcos.length > 0){
+      // Tem marcos mas sem valor_total — mostra lista simples
+      const somaMarcos = marcos.reduce((s,m)=>s+m.valor,0);
+      marcosHtml = `<div class="ctr-card-marcos">
+        <div class="ctr-card-marcos-hdr">
+          <span class="ctr-card-marcos-ttl">Marcos Pagos (${marcos.length})</span>
+          <span class="ctr-card-marcos-sum">${fmtBRL(somaMarcos)}</span>
+        </div>
+      </div>`;
+    }
+
     cardsListHtml+=`<div class="ctr-card" data-emp="${r.empreendimento}" data-tipo="${r.tipo}" data-desc="${r.descricao}" data-forn="${r.contratado}" data-cod="${r.cod}">
       <div class="ctr-card-top">
         <span class="ctr-card-cod">${r.cod}</span>
@@ -3214,6 +3350,7 @@ function buildContracts(){
         <div><span class="ctr-card-l">Pago</span><span class="ctr-card-v" style="color:#1a8a4a">${fmtBRL(r.pago)}</span></div>
         <div><span class="ctr-card-l">Saldo</span><span class="ctr-card-v" style="color:#888">${fmtBRL(Math.max(0,r.saldo))}</span></div>
       </div>
+      ${marcosHtml}
     </div>`;
   });
   cardsListHtml+='</div>';
@@ -3234,7 +3371,6 @@ function buildContracts(){
     ${fornHtml}
     <div class="sec">Tabela de Contratos</div>
     ${filterHtml}
-    ${tableHtml}
     ${cardsListHtml}`;
 
   setTimeout(()=>{
