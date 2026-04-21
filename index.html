@@ -109,14 +109,8 @@ body{padding-top:58px}
    Substitui o preenchimento sólido ouro de "Em Andamento" nos gráficos.
    Base cinza visível entre as listras; linhas diagonais verdes ascendentes. */
 .striped-green{
-  background-color:#f5f3ee !important;
-  background-image:repeating-linear-gradient(
-    45deg,
-    #2eb86e 0,
-    #2eb86e 4px,
-    transparent 4px,
-    transparent 9px
-  ) !important;
+  background-color:#a8d8b9 !important;
+  background-image:none !important;
 }
 
 /* ── Vidro embaçado esbranquiçado para KPI cards de Visão Geral + NN ──
@@ -2086,25 +2080,8 @@ const EK = EMPREENDIMENTOS.map(e => e.code);
 // Cache por contexto para não recriar a cada redraw.
 const _stripedPatternCache = new WeakMap();
 function stripedGreenPattern(chartCtx){
-  if(!chartCtx) return '#f5f3ee';
-  if(_stripedPatternCache.has(chartCtx)) return _stripedPatternCache.get(chartCtx);
-  const off = document.createElement('canvas');
-  off.width = 12; off.height = 12;
-  const c = off.getContext('2d');
-  // Fundo cinza
-  c.fillStyle = '#f5f3ee';
-  c.fillRect(0,0,12,12);
-  // Linhas diagonais verdes ascendentes (45deg), 4px de largura, espaçadas
-  c.strokeStyle = '#2eb86e';
-  c.lineWidth = 4;
-  c.lineCap = 'square';
-  c.beginPath();
-  c.moveTo(-3, 15); c.lineTo(15, -3);
-  c.moveTo(-3, 27); c.lineTo(27, -3);
-  c.stroke();
-  const pattern = chartCtx.createPattern(off, 'repeat');
-  _stripedPatternCache.set(chartCtx, pattern);
-  return pattern;
+  // Preenchimento solido verde pastel (substitui o antigo padrao de listras).
+  return '#a8d8b9';
 }
 
 function animCount(el,target,duration=1200){
