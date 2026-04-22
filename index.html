@@ -108,18 +108,12 @@ body{padding-top:58px}
 .sec.anim{opacity:1;transform:translateX(0)}
 .sec::before{content:'';width:3px;height:14px;background:var(--yellow);border-radius:2px;flex-shrink:0}
 
-/* ── Hachura diagonal verde sobre fundo cinza ──
-   Substitui o preenchimento sólido ouro de "Em Andamento" nos gráficos.
-   Base cinza visível entre as listras; linhas diagonais verdes ascendentes. */
+/* ── Status "Em Andamento" / "Saldo": verde claro sólido ──
+   Mantenho o nome .striped-green por compatibilidade (vários pontos usam).
+   Valor usado também no Chart.js (função stripedGreenPattern retorna cor sólida). */
 .striped-green{
-  background-color:#f5f3ee !important;
-  background-image:repeating-linear-gradient(
-    45deg,
-    #2eb86e 0,
-    #2eb86e 4px,
-    transparent 4px,
-    transparent 9px
-  ) !important;
+  background-color:#a8e6c0 !important;
+  background-image:none !important;
 }
 
 /* ── Vidro embaçado esbranquiçado para KPI cards de Visão Geral + NN ──
@@ -1994,26 +1988,62 @@ function _pdfOverlayHide(){
 }
 
 async function _captureElement(el, scale){
-  // html2canvas não lida bem com backdrop-filter; usamos ignoreElements para pular
-  // elementos problemáticos se precisar. Mantemos config simples e confiável.
   if(!el) return null;
+  // Salva dimensão "real" do elemento incluindo conteúdo que possa estar em scroll
+  // interno. Para modais, usamos scrollHeight do emp-modal-body para forçar a
+  // altura da captura.
+  const isModal = el.classList && el.classList.contains('emp-modal');
+  let captureHeight;
+  if(isModal){
+    // Soma scrollHeight do body (que contém a lista de projetos) + paddings fixos
+    const body = el.querySelector('.emp-modal-body');
+    const hdr  = el.querySelector('.emp-modal-hdr');
+    const left = el.querySelector('.emp-modal-left');
+    const bodyFull = body ? body.scrollHeight : 0;
+    const hdrH = hdr ? hdr.offsetHeight : 0;
+    const leftH = left ? left.scrollHeight : 0;
+    // A altura total é a maior entre o lado esquerdo e (header + body expandido)
+    captureHeight = Math.max(leftH, hdrH + bodyFull) + 20;
+  }
+
   const canvas = await html2canvas(el, {
     scale: scale || 1.5,
-    backgroundColor: '#eceeea',
+    backgroundColor: '#ffffff',
     useCORS: true,
     allowTaint: true,
     logging: false,
-    // Remove transformações/clips estranhos que às vezes atrapalham
+    height: captureHeight, // undefined = altura natural (não-modal)
+    windowHeight: captureHeight,
     onclone: (doc) => {
       // Neutraliza backdrop-filter dos cards no clone (renderização mais fiel)
       doc.querySelectorAll('[class*="kpi-card"],[class*="chart-card"],[class*="gcrd"],[class*="dvt-card"]').forEach(c => {
         c.style.backdropFilter = 'none';
         c.style.webkitBackdropFilter = 'none';
-        // Aumenta opacidade do fundo para compensar a falta de blur
         const bg = getComputedStyle(c).backgroundColor;
         if(bg && bg.includes('rgba')){
           c.style.background = 'rgba(255,255,255,.95)';
         }
+      });
+      // Para modal: remove max-height e scroll para expandir todo o conteúdo
+      doc.querySelectorAll('.emp-modal').forEach(m => {
+        m.style.maxHeight = 'none';
+        m.style.height = 'auto';
+      });
+      doc.querySelectorAll('.emp-modal-body').forEach(b => {
+        b.style.maxHeight = 'none';
+        b.style.height = 'auto';
+        b.style.overflow = 'visible';
+      });
+      doc.querySelectorAll('.emp-modal-left').forEach(l => {
+        l.style.overflowY = 'visible';
+        l.style.maxHeight = 'none';
+      });
+      doc.querySelectorAll('.emp-modal-right').forEach(r => {
+        r.style.overflow = 'visible';
+      });
+      // Remove thead sticky para não duplicar visualmente
+      doc.querySelectorAll('.emp-modal-body thead tr').forEach(tr => {
+        tr.style.position = 'static';
       });
     }
   });
@@ -2022,21 +2052,54 @@ async function _captureElement(el, scale){
 
 function _addCanvasToPDF(pdf, canvas, isFirst){
   if(!canvas) return;
-  const imgData = canvas.toDataURL('image/jpeg', 0.88);
   const pageW = pdf.internal.pageSize.getWidth();
   const pageH = pdf.internal.pageSize.getHeight();
   const margin = 8;
   const availW = pageW - margin * 2;
   const availH = pageH - margin * 2;
-  // Escala pra caber respeitando proporção
-  const ratio = canvas.width / canvas.height;
-  let w = availW;
-  let h = w / ratio;
-  if(h > availH){ h = availH; w = h * ratio; }
-  const x = (pageW - w) / 2;
-  const y = (pageH - h) / 2;
-  if(!isFirst) pdf.addPage();
-  pdf.addImage(imgData, 'JPEG', x, y, w, h, undefined, 'FAST');
+
+  // Largura renderizada no PDF = largura disponível (ocupa toda a largura útil).
+  // Altura proporcional baseada na razão do canvas original.
+  const renderedW = availW;
+  const renderedH = renderedW * (canvas.height / canvas.width);
+
+  if(renderedH <= availH){
+    // Cabe em uma página só — renderiza centralizado verticalmente
+    if(!isFirst) pdf.addPage();
+    const y = (pageH - renderedH) / 2;
+    pdf.addImage(canvas.toDataURL('image/jpeg', 0.88), 'JPEG', margin, y, renderedW, renderedH, undefined, 'FAST');
+    return;
+  }
+
+  // Conteúdo maior que uma página — fatia o canvas verticalmente.
+  // Cada fatia vira uma página nova no PDF.
+  // Convertemos availH (mm no PDF) para pixels no canvas original.
+  const pxPerMM = canvas.width / renderedW;
+  const sliceHeightPx = Math.floor(availH * pxPerMM);
+
+  let yPx = 0;
+  let pageIdx = 0;
+  while(yPx < canvas.height){
+    const remainingPx = canvas.height - yPx;
+    const thisSlicePx = Math.min(sliceHeightPx, remainingPx);
+
+    // Canvas temporário pra recortar esta fatia
+    const tmp = document.createElement('canvas');
+    tmp.width = canvas.width;
+    tmp.height = thisSlicePx;
+    const tctx = tmp.getContext('2d');
+    tctx.fillStyle = '#ffffff';
+    tctx.fillRect(0, 0, tmp.width, tmp.height);
+    tctx.drawImage(canvas, 0, -yPx);
+
+    const sliceRenderedH = renderedW * (thisSlicePx / canvas.width);
+
+    if(!isFirst || pageIdx > 0) pdf.addPage();
+    pdf.addImage(tmp.toDataURL('image/jpeg', 0.88), 'JPEG', margin, margin, renderedW, sliceRenderedH, undefined, 'FAST');
+
+    yPx += thisSlicePx;
+    pageIdx++;
+  }
 }
 
 async function exportDashboardPDF(){
@@ -2059,7 +2122,7 @@ async function exportDashboardPDF(){
     }
 
     const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
     // ── Página 1: Dashboard ──
     _pdfOverlay(`Capturando Dashboard... (1/${total})`);
@@ -2241,31 +2304,10 @@ function countRowStatus(rows){
 const EK = EMPREENDIMENTOS.map(e => e.code);
 
 // ── ANIMATED COUNTER ──
-// Gera um CanvasPattern com listras diagonais verdes sobre fundo cinza.
-// Usado nos datasets do Chart.js para representar "Em Andamento" / "Saldo"
-// com o mesmo visual da classe CSS .striped-green.
-// Cache por contexto para não recriar a cada redraw.
-const _stripedPatternCache = new WeakMap();
-function stripedGreenPattern(chartCtx){
-  if(!chartCtx) return '#f5f3ee';
-  if(_stripedPatternCache.has(chartCtx)) return _stripedPatternCache.get(chartCtx);
-  const off = document.createElement('canvas');
-  off.width = 12; off.height = 12;
-  const c = off.getContext('2d');
-  // Fundo cinza
-  c.fillStyle = '#f5f3ee';
-  c.fillRect(0,0,12,12);
-  // Linhas diagonais verdes ascendentes (45deg), 4px de largura, espaçadas
-  c.strokeStyle = '#2eb86e';
-  c.lineWidth = 4;
-  c.lineCap = 'square';
-  c.beginPath();
-  c.moveTo(-3, 15); c.lineTo(15, -3);
-  c.moveTo(-3, 27); c.lineTo(27, -3);
-  c.stroke();
-  const pattern = chartCtx.createPattern(off, 'repeat');
-  _stripedPatternCache.set(chartCtx, pattern);
-  return pattern;
+// Cor usada em datasets do Chart.js para "Em Andamento" / "Saldo" —
+// mantém o nome por compatibilidade; retorna cor sólida (verde claro pastel).
+function stripedGreenPattern(_ctx){
+  return '#a8e6c0';
 }
 
 function animCount(el,target,duration=1200){
