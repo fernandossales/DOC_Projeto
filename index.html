@@ -6,6 +6,9 @@
 <title>Conviver Urbanismo — Acompanhamento de Projetos</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js"></script>
+<!-- PDF export: html2canvas rasteriza DOM → Canvas; jsPDF empacota canvas em PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
 :root{
@@ -109,8 +112,14 @@ body{padding-top:58px}
    Substitui o preenchimento sólido ouro de "Em Andamento" nos gráficos.
    Base cinza visível entre as listras; linhas diagonais verdes ascendentes. */
 .striped-green{
-  background-color:#a8d8b9 !important;
-  background-image:none !important;
+  background-color:#f5f3ee !important;
+  background-image:repeating-linear-gradient(
+    45deg,
+    #2eb86e 0,
+    #2eb86e 4px,
+    transparent 4px,
+    transparent 9px
+  ) !important;
 }
 
 /* ── Vidro embaçado esbranquiçado para KPI cards de Visão Geral + NN ──
@@ -1131,6 +1140,9 @@ setTimeout(()=>{ const u=document.getElementById('login-user'); if(u && !u.disab
     <button id="refresh-btn" class="hdr-refresh" onclick="reloadAllFromSheets(true)" title="Atualizar dados da planilha" aria-label="Atualizar dados da planilha" type="button">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
     </button>
+    <button id="pdf-btn" class="hdr-refresh" onclick="exportDashboardPDF()" title="Exportar Dashboard em PDF" aria-label="Exportar PDF" type="button" style="margin-left:6px">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/></svg>
+    </button>
   </div>
 </header>
 
@@ -1943,6 +1955,161 @@ function showLoadingError(err){
   ov.classList.add('sk-visible');
 }
 
+
+
+// ──────────────────────────────────────────────────────────────────────────
+// EXPORTAÇÃO PDF DO DASHBOARD
+// ──────────────────────────────────────────────────────────────────────────
+// Fluxo:
+// 1. Mostra overlay de progresso.
+// 2. Se estiver em outra aba, volta para Dashboard e aguarda render.
+// 3. Captura o conteúdo do Dashboard em canvas (html2canvas) → página 1 do PDF.
+// 4. Para cada empreendimento do registro (exceto GE), abre openEmpStatusModal,
+//    aguarda animação/render, captura o modal em canvas → página N do PDF.
+// 5. Fecha modal, salva PDF como "Dashboard_Conviver_YYYY-MM-DD.pdf".
+// ──────────────────────────────────────────────────────────────────────────
+
+function _sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+function _pdfOverlay(msg){
+  let ov = document.getElementById('pdf-overlay');
+  if(!ov){
+    ov = document.createElement('div');
+    ov.id = 'pdf-overlay';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(13,13,13,.82);backdrop-filter:blur(8px);z-index:99999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;color:#fff;font-family:DM Sans,sans-serif';
+    ov.innerHTML = `
+      <div style="width:54px;height:54px;border:4px solid rgba(255,255,255,.2);border-top-color:#2eb86e;border-radius:50%;animation:spin 1s linear infinite"></div>
+      <div id="pdf-overlay-msg" style="font-size:14px;font-weight:600;letter-spacing:.5px"></div>
+      <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+    `;
+    document.body.appendChild(ov);
+  }
+  document.getElementById('pdf-overlay-msg').textContent = msg;
+  ov.style.display = 'flex';
+}
+
+function _pdfOverlayHide(){
+  const ov = document.getElementById('pdf-overlay');
+  if(ov) ov.style.display = 'none';
+}
+
+async function _captureElement(el, scale){
+  // html2canvas não lida bem com backdrop-filter; usamos ignoreElements para pular
+  // elementos problemáticos se precisar. Mantemos config simples e confiável.
+  if(!el) return null;
+  const canvas = await html2canvas(el, {
+    scale: scale || 1.5,
+    backgroundColor: '#eceeea',
+    useCORS: true,
+    allowTaint: true,
+    logging: false,
+    // Remove transformações/clips estranhos que às vezes atrapalham
+    onclone: (doc) => {
+      // Neutraliza backdrop-filter dos cards no clone (renderização mais fiel)
+      doc.querySelectorAll('[class*="kpi-card"],[class*="chart-card"],[class*="gcrd"],[class*="dvt-card"]').forEach(c => {
+        c.style.backdropFilter = 'none';
+        c.style.webkitBackdropFilter = 'none';
+        // Aumenta opacidade do fundo para compensar a falta de blur
+        const bg = getComputedStyle(c).backgroundColor;
+        if(bg && bg.includes('rgba')){
+          c.style.background = 'rgba(255,255,255,.95)';
+        }
+      });
+    }
+  });
+  return canvas;
+}
+
+function _addCanvasToPDF(pdf, canvas, isFirst){
+  if(!canvas) return;
+  const imgData = canvas.toDataURL('image/jpeg', 0.88);
+  const pageW = pdf.internal.pageSize.getWidth();
+  const pageH = pdf.internal.pageSize.getHeight();
+  const margin = 8;
+  const availW = pageW - margin * 2;
+  const availH = pageH - margin * 2;
+  // Escala pra caber respeitando proporção
+  const ratio = canvas.width / canvas.height;
+  let w = availW;
+  let h = w / ratio;
+  if(h > availH){ h = availH; w = h * ratio; }
+  const x = (pageW - w) / 2;
+  const y = (pageH - h) / 2;
+  if(!isFirst) pdf.addPage();
+  pdf.addImage(imgData, 'JPEG', x, y, w, h, undefined, 'FAST');
+}
+
+async function exportDashboardPDF(){
+  if(typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined'){
+    alert('Bibliotecas de PDF ainda carregando. Aguarde alguns segundos e tente novamente.');
+    return;
+  }
+  const btn = document.getElementById('pdf-btn');
+  if(btn) btn.disabled = true;
+
+  try{
+    const total = 1 + EMPREENDIMENTOS.length; // dashboard + N empreendimentos
+    _pdfOverlay(`Preparando exportação... (0/${total})`);
+
+    // Garante que estamos no Dashboard
+    const currentActive = document.querySelector('.tab-btn.active')?.dataset?.tab;
+    if(currentActive && currentActive !== 'dash'){
+      showTab('dash', null);
+      await _sleep(600); // aguarda animações revelarem
+    }
+
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+    // ── Página 1: Dashboard ──
+    _pdfOverlay(`Capturando Dashboard... (1/${total})`);
+    await _sleep(400);
+    const dashEl = document.getElementById('page-dash');
+    const dashCanvas = await _captureElement(dashEl, 1.4);
+    _addCanvasToPDF(pdf, dashCanvas, true);
+
+    // ── Páginas 2..N: modal de cada empreendimento ──
+    for(let i = 0; i < EMPREENDIMENTOS.length; i++){
+      const emp = EMPREENDIMENTOS[i];
+      _pdfOverlay(`Capturando ${emp.name}... (${i + 2}/${total})`);
+      // Abre o modal — usa a função já existente, que renderiza todo o conteúdo
+      openEmpStatusModal(emp.code);
+      // Espera a animação de abertura + render das barras
+      await _sleep(750);
+      // O modal de status é renderizado dentro de #empModal (container global)
+      const modalEl = document.querySelector('#empModal .emp-modal');
+      if(modalEl){
+        const modalCanvas = await _captureElement(modalEl, 1.4);
+        _addCanvasToPDF(pdf, modalCanvas, false);
+      } else {
+        console.warn(`[PDF] Modal de ${emp.code} não encontrado no DOM`);
+      }
+      // Fecha o modal antes do próximo
+      const closeBtn = document.querySelector('#empModal .emp-modal-close');
+      if(closeBtn) closeBtn.click();
+      else {
+        const ov = document.getElementById('empModal');
+        if(ov) ov.classList.remove('show');
+      }
+      await _sleep(280);
+    }
+
+    _pdfOverlay('Gerando PDF...');
+    await _sleep(200);
+
+    const today = new Date();
+    const stamp = today.toISOString().slice(0,10); // YYYY-MM-DD
+    pdf.save(`Dashboard_Conviver_${stamp}.pdf`);
+
+  } catch(err) {
+    console.error('[PDF] Erro ao gerar:', err);
+    alert('Erro ao gerar PDF: ' + err.message);
+  } finally {
+    _pdfOverlayHide();
+    if(btn) btn.disabled = false;
+  }
+}
+
 async function reloadAllFromSheets(forceRefresh){
   const btn = document.getElementById("refresh-btn");
   if(btn){ btn.disabled = true; btn.classList.add("spinning"); }
@@ -2080,8 +2247,25 @@ const EK = EMPREENDIMENTOS.map(e => e.code);
 // Cache por contexto para não recriar a cada redraw.
 const _stripedPatternCache = new WeakMap();
 function stripedGreenPattern(chartCtx){
-  // Preenchimento solido verde pastel (substitui o antigo padrao de listras).
-  return '#a8d8b9';
+  if(!chartCtx) return '#f5f3ee';
+  if(_stripedPatternCache.has(chartCtx)) return _stripedPatternCache.get(chartCtx);
+  const off = document.createElement('canvas');
+  off.width = 12; off.height = 12;
+  const c = off.getContext('2d');
+  // Fundo cinza
+  c.fillStyle = '#f5f3ee';
+  c.fillRect(0,0,12,12);
+  // Linhas diagonais verdes ascendentes (45deg), 4px de largura, espaçadas
+  c.strokeStyle = '#2eb86e';
+  c.lineWidth = 4;
+  c.lineCap = 'square';
+  c.beginPath();
+  c.moveTo(-3, 15); c.lineTo(15, -3);
+  c.moveTo(-3, 27); c.lineTo(27, -3);
+  c.stroke();
+  const pattern = chartCtx.createPattern(off, 'repeat');
+  _stripedPatternCache.set(chartCtx, pattern);
+  return pattern;
 }
 
 function animCount(el,target,duration=1200){
