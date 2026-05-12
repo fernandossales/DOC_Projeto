@@ -1582,13 +1582,14 @@ async function fetchContractsSheet(){
 // ── ACOMPANHAMENTO NN parser ──
 // Real layout (col A is empty/blank decorative, data starts col B):
 //   B=EMPREENDIMENTO, C=MUNICIPIO (ex: "RAPOSA/MA" - includes UF),
-//   D=HOUVE VISITA?, E=PERIODO, F=DATA 1º VERSÃO, G=DATA ULTIMA VERSÃO, H=OBSERVAÇÃO
+//   D=HOUVE VISITA?, E=PERIODO, F=DATA 1º VERSÃO, G=DATA ULTIMA VERSÃO,
+//   H=OBSERVAÇÃO, I=STATUS (ENTREGUE / EM ELABORAÇÃO / PAUSADO / NÃO INICIADO)
 // Title rows + group header + column header occupy first 4 rows; data starts row 5.
 function parseNNSheet(gviz){
   const rows = gviz.table.rows || [];
 
   // Fixed column positions matching real sheet layout
-  const idxMap = {emp:1, munuf:2, visita:3, periodo:4, v1:5, vult:6, obs:7};
+  const idxMap = {emp:1, munuf:2, visita:3, periodo:4, v1:5, vult:6, obs:7, status:8};
 
   const out = [];
   rows.forEach(r=>{
@@ -1626,7 +1627,8 @@ function parseNNSheet(gviz){
       periodo: str("periodo"),
       v1:      str("v1"),
       vult:    str("vult"),
-      obs:     str("obs")
+      obs:     str("obs"),
+      status:  str("status").toUpperCase()
     });
   });
   return out;
@@ -4277,10 +4279,17 @@ function buildNNPage(){
   const semVisita = NN_DATA.filter(d=>d.visita==='NÃO').length;
 
   function statusBadge(r){
-    if(!r.v1 && r.visita==='SIM') return `<span class="bx" style="background:rgba(184,144,10,.12);color:#8a6a00;border:1px solid rgba(184,144,10,.3)">EM ELABORAÇÃO</span>`;
-    if(r.obs && r.obs.includes('PRIORIDADE')) return `<span class="bx" style="background:rgba(150,150,150,.1);color:#888;border:1px solid rgba(150,150,150,.25)">SEM PRIORIDADE</span>`;
-    if(r.v1) return `<span class="bx bx-ok">ENTREGUE</span>`;
-    return `<span class="bx" style="background:rgba(150,150,150,.1);color:#888;border:1px solid rgba(150,150,150,.25)">SEM VISITA</span>`;
+    // Lê o Status direto da planilha (coluna I). Mapeia para o badge visual
+    // mantendo a paleta já existente. Valores esperados: ENTREGUE,
+    // EM ELABORAÇÃO, PAUSADO, NÃO INICIADO. Valores fora dessa lista caem
+    // no badge neutro, mostrando o texto original.
+    const s = (r.status||'').trim().toUpperCase();
+    if(!s) return `<span class="bx" style="background:rgba(150,150,150,.1);color:#888;border:1px solid rgba(150,150,150,.25)">—</span>`;
+    if(s === 'ENTREGUE') return `<span class="bx bx-ok">ENTREGUE</span>`;
+    if(s === 'EM ELABORAÇÃO' || s === 'EM ELABORACAO') return `<span class="bx" style="background:rgba(184,144,10,.12);color:#8a6a00;border:1px solid rgba(184,144,10,.3)">EM ELABORAÇÃO</span>`;
+    if(s === 'PAUSADO') return `<span class="bx" style="background:rgba(52,152,219,.12);color:#1f6fa5;border:1px solid rgba(52,152,219,.3)">PAUSADO</span>`;
+    if(s === 'NÃO INICIADO' || s === 'NAO INICIADO') return `<span class="bx" style="background:rgba(217,79,79,.12);color:#a8312f;border:1px solid rgba(217,79,79,.3)">NÃO INICIADO</span>`;
+    return `<span class="bx" style="background:rgba(150,150,150,.1);color:#666;border:1px solid rgba(150,150,150,.3)">${s}</span>`;
   }
 
   let h = `<div class="emp-hdr reveal" style="border-color:#3498db">
