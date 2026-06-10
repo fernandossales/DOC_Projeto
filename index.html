@@ -1645,7 +1645,7 @@ async function fetchNNSheet(){
   return _fetchTabWithFallbacks(NN_TAB_VARIANTS, "ACOMPANHAMENTO NN");
 }
 
-const CACHE_KEY = "conviver_sheets_cache_v9";
+const CACHE_KEY = "conviver_sheets_cache_v10";
 const CACHE_TTL = 5*60*1000; // 5 minutes
 
 function _gvizUrl(sheetName){
@@ -1688,11 +1688,16 @@ function _gvizRowsToObjects(gviz, headerIdx){
 }
 
 function _normStatus(v){
-  const s = (v||"").toString().trim().toUpperCase();
-  if(!s || s==="N/A") return "";
-  if(s==="CONCLUIDO" || s==="CONCLUÍDO") return "CONCLUIDO";
-  if(s.startsWith("EM AND")) return "EM ANDAMENTO";
-  if(s.startsWith("NÃO INI") || s.startsWith("NAO INI")) return "NÃO INICIADO";
+  // Robusto a variações de digitação na planilha: acentos (CONCLUÍDO/CONCLUIDO),
+  // NBSP, espaços duplicados, caixa mista. Compara sempre a forma "achatada"
+  // (sem diacríticos) e retorna o valor canônico usado pelo restante do código.
+  let s = (v||"").toString().replace(/\u00A0/g," ").replace(/\s+/g," ").trim().toUpperCase();
+  if(!s) return "";
+  const flat = s.normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+  if(flat==="N/A" || flat==="NA" || flat==="-") return "";
+  if(flat.startsWith("CONCLU")) return "CONCLUIDO";
+  if(flat.startsWith("EM AND")) return "EM ANDAMENTO";
+  if(flat.startsWith("NAO INI")) return "NÃO INICIADO";
   return "";
 }
 function _cleanText(v){
@@ -1781,10 +1786,20 @@ function parsePRSheet(gviz){
 
 async function fetchSheet(tabName){
   const url = _gvizUrl(tabName);
-  const resp = await fetch(url, {cache:"no-store"});
-  if(!resp.ok) throw new Error(`HTTP ${resp.status} ao buscar aba "${tabName}"`);
-  const text = await resp.text();
-  return _parseGviz(text);
+  // Timeout de 15s: evita spinner infinito em conexões móveis instáveis.
+  const ctrl = new AbortController();
+  const timer = setTimeout(()=>ctrl.abort(), 15000);
+  try {
+    const resp = await fetch(url, {cache:"no-store", signal: ctrl.signal});
+    if(!resp.ok) throw new Error(`HTTP ${resp.status} ao buscar aba "${tabName}"`);
+    const text = await resp.text();
+    return _parseGviz(text);
+  } catch(e){
+    if(e.name === 'AbortError') throw new Error(`Timeout (15s) ao buscar aba "${tabName}"`);
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 async function loadFromSheets(forceRefresh){
@@ -1804,46 +1819,60 @@ async function loadFromSheets(forceRefresh){
   const newD = {};
   const errors = [];
 
-  for(const key of [...EK, "GE"]){
-    try {
-      const gviz = await fetchSheet(SHEETS_TABS[key]);
-      newD[key] = {name: EMP_NAMES[key], rows: parseEmpSheet(gviz, key==="GE"), pranchas: []};
-    } catch(e){
-      console.error(`Erro ao carregar aba ${SHEETS_TABS[key]}:`, e);
-      errors.push(`${SHEETS_TABS[key]}: ${e.message}`);
-      newD[key] = {name: EMP_NAMES[key], rows: [], pranchas: []};
-    }
-    // Abas _PR foram removidas do UI — não precisamos mais carregá-las
-    newD[key].pranchas = [];
-  }
+  // ── CARREGAMENTO PARALELO ──
+  // Todas as abas (empreendimentos + GE + DVT + MEDIÇÕES + NN) são buscadas
+  // simultaneamente via Promise.allSettled. Com 10+ abas, isso reduz o tempo
+  // de carga de ~8-12s (sequencial) para ~1-2s (limitado pela aba mais lenta).
+  const empKeys = [...EK, "GE"];
+  const [empResults, dvtResult, ctrResult, nnResult] = await Promise.all([
+    Promise.allSettled(empKeys.map(key => fetchSheet(SHEETS_TABS[key]))),
+    fetchSheet(SHEETS_TABS.DVT).then(g=>({ok:true,g})).catch(e=>({ok:false,e})),
+    fetchContractsSheet().then(g=>({ok:true,g})).catch(e=>({ok:false,e})),
+    fetchNNSheet().then(g=>({ok:true,g})).catch(e=>({ok:false,e})),
+  ]);
 
-  try {
-    const dvtGviz = await fetchSheet(SHEETS_TABS.DVT);
-    newD.DVT = parseDVTSheet(dvtGviz);
-  } catch(e){
-    console.error("Erro ao carregar DVT:", e);
-    errors.push(`DVT: ${e.message}`);
+  empKeys.forEach((key, i) => {
+    const res = empResults[i];
+    if(res.status === "fulfilled"){
+      try {
+        newD[key] = {name: EMP_NAMES[key], rows: parseEmpSheet(res.value, key==="GE"), pranchas: []};
+        return;
+      } catch(e){
+        console.error(`Erro ao parsear aba ${SHEETS_TABS[key]}:`, e);
+        errors.push(`${SHEETS_TABS[key]}: ${e.message}`);
+      }
+    } else {
+      console.error(`Erro ao carregar aba ${SHEETS_TABS[key]}:`, res.reason);
+      errors.push(`${SHEETS_TABS[key]}: ${res.reason?.message || res.reason}`);
+    }
+    newD[key] = {name: EMP_NAMES[key], rows: [], pranchas: []};
+  });
+
+  if(dvtResult.ok){
+    try { newD.DVT = parseDVTSheet(dvtResult.g); }
+    catch(e){ console.error("Erro ao parsear DVT:", e); errors.push(`DVT: ${e.message}`); newD.DVT = []; }
+  } else {
+    console.error("Erro ao carregar DVT:", dvtResult.e);
+    errors.push(`DVT: ${dvtResult.e?.message}`);
     newD.DVT = [];
   }
 
-  // Fetch contracts (separate try/catch — most likely to fail)
   let newContracts = [];
-  try {
-    const contractsGviz = await fetchContractsSheet();
-    newContracts = parseContractsSheet(contractsGviz);
-  } catch(e){
-    console.error("Erro ao carregar contratos (MEDIÇÕES):", e);
-    errors.push(`MEDIÇÕES: ${e.message}`);
+  if(ctrResult.ok){
+    try { newContracts = parseContractsSheet(ctrResult.g); }
+    catch(e){ console.error("Erro ao parsear contratos (MEDIÇÕES):", e); errors.push(`MEDIÇÕES: ${e.message}`); }
+  } else {
+    console.error("Erro ao carregar contratos (MEDIÇÕES):", ctrResult.e);
+    errors.push(`MEDIÇÕES: ${ctrResult.e?.message}`);
   }
 
-  // Fetch NN
   let newNN = [];
-  try {
-    const nnGviz = await fetchNNSheet();
-    newNN = parseNNSheet(nnGviz);
-  } catch(e){
-    console.error("Erro ao carregar NN:", e);
-    errors.push(`ACOMPANHAMENTO NN: ${e.message}`);
+  if(nnResult.ok){
+    try { newNN = parseNNSheet(nnResult.g); }
+    catch(e){ console.error("Erro ao parsear NN:", e); errors.push(`ACOMPANHAMENTO NN: ${e.message}`); }
+  } else {
+    console.error("Erro ao carregar NN:", nnResult.e);
+    errors.push(`ACOMPANHAMENTO NN: ${nnResult.e?.message}`);
   }
 
   // If everything failed, throw a consolidated error so the overlay shows it
